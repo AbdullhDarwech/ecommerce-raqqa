@@ -1,6 +1,8 @@
 import { AuthProvider } from '@/lib/auth';
+import { CartProvider } from '@/context/CartContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import CartDrawer from '@/components/CartDrawer';
 import Container from '@/components/Container';
 import './globals.css';
 
@@ -19,21 +21,26 @@ export default function RootLayout({
     <html lang="ar" dir="rtl">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/logo.ico" />
       </head>
 
-      <body className="bg-gray-50 text-gray-900">
+      <body className="bg-gray-50 text-gray-900 font-sans selection:bg-emerald-200 selection:text-emerald-900">
         <AuthProvider>
-          <Header />
+          <CartProvider>
+            {/* Header is now global */}
+            <Header />
+            
+            {/* Global Cart Drawer */}
+            <CartDrawer />
 
-          {/* هنا الكونتينر الأساسي للمشروع */}
-          <main className="min-h-screen py-6">
-            <Container>
-              {children}
-            </Container>
-          </main>
+            <main className="min-h-screen pt-24 md:pt-28">
+              <Container>
+                {children}
+              </Container>
+            </main>
 
-          <Footer />
+            <Footer />
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

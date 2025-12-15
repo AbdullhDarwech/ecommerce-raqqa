@@ -1,78 +1,95 @@
 'use client';
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import {jwtDecode} from 'jwt-decode';
+
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import api from './api';
+import { useRouter } from 'next/navigation';
 
 interface User {
   _id: string;
   name: string;
   email: string;
-  role: string;
+  phone?: string;
+  role: 'user' | 'admin';
+  favorites?: string[];
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (token: string) => void;
+  loading: boolean;
+  login: (token: string, userData: User) => void;
   logout: () => void;
-  adminToken: string | null; // للتسهيل
+  register: (userData: any) => Promise<void>;
+  updateUser: (userData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [adminToken, setAdminToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
+  // التحقق من التوكن عند تحميل التطبيق
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-      try {
-        const decoded: any = jwtDecode(token);
-        setUser({
-          _id: decoded.id,
-          name: decoded.name || '',
-          email: decoded.email || '',
-          role: decoded.role,
-        });
-        setAdminToken(token);
-      } catch (error) {
-        console.error('Error decoding token on load:', error);
-        localStorage.removeItem('adminToken');
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          // جلب بيانات المستخدم من الباك اند
+          const res = await api.get('/users/profile');
+          setUser(res.data);
+        } catch (error) {
+          console.error('Session expired or invalid token');
+          localStorage.removeItem('token');
+          setUser(null);
+        }
       }
-    }
+      setLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
-  const login = (token: string) => {
-    localStorage.setItem('adminToken', token);
-    try {
-      const decoded: any = jwtDecode(token);
-      const newUser: User = {
-        _id: decoded.id,
-        name: decoded.name || '',
-        email: decoded.email || '',
-        role: decoded.role,
-      };
-      setUser(newUser);
-      setAdminToken(token);
-    } catch (error) {
-      console.error('Error decoding token on login:', error);
-    }
+  const login = (token: string, userData: User) => {
+    localStorage.setItem('token', token);
+    setUser(userData);
+    router.push('/');
   };
 
   const logout = () => {
-    localStorage.removeItem('adminToken');
+    localStorage.removeItem('token');
     setUser(null);
-    setAdminToken(null);
+    router.push('/login');
+  };
+
+  const register = async (userData: any) => {
+    // الباك اند الخاص بك يتوقع التسجيل عبر /auth/register
+    // ويفترض أن يعيد توكن ومستخدم، أو يمكنك تسجيل الدخول مباشرة بعد التسجيل
+    const res = await api.post('/auth/register', userData);
+    if (res.data.token) {
+      localStorage.setItem('token', res.data.token);
+      setUser(res.data.user);
+      router.push('/');
+    }
+  };
+
+  const updateUser = (data: Partial<User>) => {
+    if (user) {
+      setUser({ ...user, ...data });
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, adminToken }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, register, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
-};
+}

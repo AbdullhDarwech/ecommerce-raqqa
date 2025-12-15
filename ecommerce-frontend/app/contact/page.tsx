@@ -13,7 +13,7 @@ export default function ContactPage() {
             <input type="text" placeholder="الاسم" className="w-full border p-2 rounded" />
             <input type="email" placeholder="البريد" className="w-full border p-2 rounded" />
             <textarea placeholder="الرسالة" className="w-full border p-2 rounded" rows={4}></textarea>
-            <button type="submit" className="bg-syrazo-green text-white px-6 py-2 rounded">إرسال</button>
+            <button type="submit" className="bg-Furato-green text-white px-6 py-2 rounded">إرسال</button>
           </form>
         </div>
       </div>

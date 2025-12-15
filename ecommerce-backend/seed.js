@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const connectDB = require('./config/database'); // تأكد من أن المسار صحيح
-const { User, Category, Product, Review, Cart, Order } = require('./models');
+const connectDB = require('./config/database'); // تأكد من المسار
+const { User, Category, Product, Review, Cart, Order, Store } = require('./models');
 const bcrypt = require('bcryptjs');
 
 const seedData = async () => {
@@ -17,10 +17,11 @@ const seedData = async () => {
     await Review.deleteMany();
     await Cart.deleteMany();
     await Order.deleteMany();
+    await Store.deleteMany();
     console.log('🗑 تم مسح البيانات القديمة');
 
     // ----------------------------
-    // إنشاء المستخدمين (مدير + مستخدمين)
+    // إنشاء المستخدمين
     // ----------------------------
     const hashedPassword = await bcrypt.hash('password123', 10);
     const users = await User.insertMany([
@@ -33,57 +34,11 @@ const seedData = async () => {
     console.log('✅ تم إنشاء المستخدمين');
 
     // ----------------------------
-    // إنشاء الفئات مع الأقسام الفرعية
+    // إنشاء الفئات
     // ----------------------------
     const categories = await Category.insertMany([
-      {
-        name: 'إلكترونيات',
-        description: 'أجهزة إلكترونية وأدوات',
-        localInventoryNotes: 'متوفرة في مراكز التقنية بالرقّة',
-        subcategories: ['مكيفات', 'تلفزيونات', 'ثلاجات', 'غسالات', 'هواتف', 'حواسيب', 'سماعات', 'كاميرات'],
-      },
-      {
-        name: 'ملابس',
-        description: 'ملابس وأزياء',
-        localInventoryNotes: 'مصنوعة محليًا',
-        subcategories: ['رجالية', 'نسائية', 'أطفال', 'رياضية', 'شتوية', 'صيفية', 'أحذية', 'إكسسوارات'],
-      },
-      {
-        name: 'أثاث',
-        description: 'أثاث المنزل والمكتب',
-        localInventoryNotes: 'متين للجو الصحراوي',
-        subcategories: ['غرف نوم', 'غرف معيشة', 'مكاتب', 'مطابخ', 'أثاث خارجي', 'خزائن', 'طاولات', 'كراسي'],
-      },
-      {
-        name: 'مستلزمات منزلية',
-        description: 'أدوات منزلية أساسية',
-        localInventoryNotes: 'متوفرة محليًا',
-        subcategories: ['أدوات مطبخ', 'منظفات', 'أدوات حديقة', 'إضاءة', 'أدوات صحية', 'أغطية', 'مفروشات', 'أدوات تنظيف'],
-      },
-      {
-        name: 'ألعاب',
-        description: 'ألعاب وألعاب تعليمية للأطفال',
-        localInventoryNotes: 'متعة للعائلات',
-        subcategories: ['ألعاب تعليمية', 'ألعاب خارجية', 'دمى', 'ألعاب فيديو', 'ألعاب بناء', 'ألعاب رياضية', 'ألعاب موسيقية', 'ألعاب مائية'],
-      },
-      {
-        name: 'مستحضرات تجميل',
-        description: 'منتجات التجميل والعناية',
-        localInventoryNotes: 'خيارات حلال متوفرة',
-        subcategories: ['عناية بالبشرة', 'عناية بالشعر', 'مكياج', 'عطور', 'عناية بالأظافر', 'منتجات رجالية', 'منتجات طبيعية', 'أدوات تجميل'],
-      },
-      {
-        name: 'أغذية',
-        description: 'مواد غذائية ووجبات خفيفة',
-        localInventoryNotes: 'منتجات محلية طازجة',
-        subcategories: ['فواكه وخضار', 'لحوم', 'ألبان', 'مخبوزات', 'مشروبات', 'حلويات', 'توابل', 'معلبات'],
-      },
-      {
-        name: 'كتب',
-        description: 'كتب وأدب',
-        localInventoryNotes: 'مصادر تعليمية',
-        subcategories: ['روايات', 'تعليمية', 'أطفال', 'دينية', 'تاريخية', 'علمية', 'فنون', 'لغات'],
-      },
+      { name: 'إلكترونيات', description: 'أجهزة إلكترونية وأدوات', imageUrl: '/images/tecnloje.png', subcategories: ['مكيفات', 'تلفزيونات', 'هواتف'] },
+      { name: 'ملابس', description: 'ملابس وأزياء', imageUrl: '/images/cloths.png', subcategories: ['رجالية', 'نسائية'] },
     ]);
     console.log('✅ تم إنشاء الفئات');
 
@@ -91,7 +46,7 @@ const seedData = async () => {
     // إنشاء المنتجات
     // ----------------------------
     const products = [];
-    const brands = ['ماركةX', 'ماركةY', 'ماركةZ', 'محلية', 'عالمية'];
+    const brands = ['ماركةX', 'ماركةY', 'محلية'];
     const images = [
       'https://example.com/image1.jpg',
       'https://example.com/image2.jpg',
@@ -100,10 +55,13 @@ const seedData = async () => {
 
     categories.forEach(category => {
       category.subcategories.forEach(sub => {
-        for (let i = 1; i <= 200; i++) { // 200 منتج لكل قسم فرعي
+        for (let i = 1; i <= 10; i++) { // 10 منتجات لكل قسم فرعي (لتجربة سريعة)
           products.push({
             name: `${sub} منتج ${i}`,
-            description: `وصف المنتج ${i} للقسم ${sub}`,
+            description: [
+              `وصف المنتج ${i} للقسم ${sub} — السطر الأول`,
+              `تفاصيل إضافية عن المنتج ${i} — السطر الثاني`,
+            ],
             category: category._id,
             subcategory: sub,
             brand: brands[Math.floor(Math.random() * brands.length)],
@@ -111,65 +69,111 @@ const seedData = async () => {
             priceRental: Math.floor(Math.random() * 100) + 5,
             images: images.slice(0, Math.floor(Math.random() * 3) + 1),
             stockQuantity: Math.floor(Math.random() * 100) + 1,
-            isBestSeller: Math.random() > 0.8,
-            discountPercentage: Math.random() > 0.7 ? Math.floor(Math.random() * 50) : 0,
           });
         }
       });
     });
 
-    await Product.insertMany(products);
-    console.log('✅ تم إنشاء آلاف المنتجات');
+    const createdProducts = await Product.insertMany(products);
+    console.log('✅ تم إنشاء المنتجات');
+
+    const storesData = [
+      {
+        name: 'متجر الإلكترونيات',
+        owner: users[1]._id,
+        description: [
+          'متجر متخصص في الإلكترونيات',
+          'أفضل الأسعار وأحدث الأجهزة'
+        ],
+        logo: '/images/store1-logo.png',
+        coverImage: '/images/store1-cover.png',
+        categories: [categories[0]._id], // إلكترونيات
+        address: 'الرقة',
+        phone: '0999999999',
+        email: 'electro@store.com'
+      },
+      {
+        name: 'متجر الملابس',
+        owner: users[2]._id,
+        description: [
+          'ملابس عصرية لجميع الأعمار',
+          'جودة ممتازة'
+        ],
+        logo: '/images/store2-logo.png',
+        coverImage: '/images/store2-cover.png',
+        categories: [categories[1]._id], // ملابس
+        address: 'حلب',
+        phone: '0988888888',
+        email: 'clothes@store.com'
+      }
+    ];
+    
+    // ربط المنتجات بكل متجر
+    const stores = storesData.map(store => {
+      const relatedProducts = createdProducts
+        .filter(p => store.categories.includes(p.category))
+        .slice(0, 10)
+        .map(p => p._id);
+    
+      return { ...store, products: relatedProducts };
+    });
+    
+    await Store.insertMany(stores);
+    console.log('✅ تم إنشاء المتاجر');
+
+    await Store.insertMany(stores);
+    console.log('✅ تم إنشاء المتاجر');
 
     // ----------------------------
     // إنشاء الطلبات (Orders)
     // ----------------------------
     const orders = [];
     const statuses = ['pending', 'shipped', 'delivered'];
-
+    
     for (let i = 1; i <= 500; i++) {
       const user = users[Math.floor(Math.random() * users.length)];
       const numItems = Math.floor(Math.random() * 10) + 1;
       const items = [];
-
+    
       for (let j = 0; j < numItems; j++) {
-        const productIndex = Math.floor(Math.random() * products.length);
-        const product = products[productIndex];
+        const product = createdProducts[Math.floor(Math.random() * createdProducts.length)];
         items.push({
-          product: product._id,
+          product: product._id, // ObjectId صحيح
           quantity: Math.floor(Math.random() * 5) + 1,
           orderType: Math.random() > 0.5 ? 'purchase' : 'rental',
         });
       }
-
+    
       orders.push({
         user: user._id,
         items,
         totalAmount: items.reduce((sum, item) => {
-          const prod = products.find(p => p._id.toString() === item.product.toString());
+          const prod = createdProducts.find(p => p._id.equals(item.product));
           return prod ? sum + (item.quantity * (item.orderType === 'purchase' ? prod.pricePurchase : prod.priceRental)) : sum;
         }, 0),
         status: statuses[Math.floor(Math.random() * statuses.length)],
         shippingAddress: `العنوان ${i}, الرقة, سوريا`,
       });
     }
-
+    
     await Order.insertMany(orders);
-    console.log('✅ تم إنشاء 500 طلب مع عناصر كثيرة');
+    
+    await Order.insertMany(orders);
+    console.log('✅ تم إنشاء الطلبات');
 
     // ----------------------------
-    // إنشاء سلات (Carts)
+    // إنشاء السلات (Carts)
     // ----------------------------
     const carts = [];
     users.forEach(user => {
       if (Math.random() > 0.5) {
-        const numItems = Math.floor(Math.random() * 5) + 1;
+        const numItems = Math.floor(Math.random() * 3) + 1;
         const items = [];
         for (let j = 0; j < numItems; j++) {
-          const product = products[Math.floor(Math.random() * products.length)];
+          const product = createdProducts[Math.floor(Math.random() * createdProducts.length)];
           items.push({
             product: product._id,
-            quantity: Math.floor(Math.random() * 3) + 1,
+            quantity: Math.floor(Math.random() * 2) + 1,
             orderType: Math.random() > 0.5 ? 'purchase' : 'rental',
           });
         }
@@ -180,7 +184,7 @@ const seedData = async () => {
     await Cart.insertMany(carts);
     console.log('✅ تم إنشاء السلات');
 
-    console.log('🎉 تم تعبئة قاعدة البيانات بنجاح مع كمية ضخمة من البيانات!');
+    console.log('🎉 تم تعبئة قاعدة البيانات بنجاح!');
     process.exit();
   } catch (error) {
     console.error('خطأ أثناء تعبئة البيانات:', error);

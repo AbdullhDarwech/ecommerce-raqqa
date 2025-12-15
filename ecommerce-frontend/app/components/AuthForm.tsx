@@ -23,7 +23,7 @@ export default function AuthForm() {
 
       if (data.token) {
         login(data.token); // حفظ التوكن في AuthProvider / localStorage
-        router.push('/admin/dashboard'); // إعادة التوجيه للـ Dashboard
+        router.push('/'); // إعادة التوجيه للـ Dashboard
       } else {
         setError('لم يتم العثور على التوكن في الاستجابة');
       }

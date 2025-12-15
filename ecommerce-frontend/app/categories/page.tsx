@@ -36,7 +36,7 @@ export default function CategoriesPage() {
             <p className="text-gray-600 mb-4">{category.description}</p>
             <div className="grid grid-cols-2 gap-4">
               {category.subcategories?.map((sub) => (
-                <Link key={sub} href={`/categories/${category.name}/${sub}`} className="bg-syrazo-yellow p-4 rounded text-center hover:bg-yellow-300 transition">
+                <Link key={sub} href={`/categories/${category.name}/${sub}`} className="bg-Furato-yellow p-4 rounded text-center hover:bg-yellow-300 transition">
                   {sub}
                 </Link>
               ))}

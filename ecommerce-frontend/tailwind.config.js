@@ -18,8 +18,8 @@ module.exports = {
           green: '#228B22',
         },
 
-        // مجموعة syrazo
-        syrazo: {
+        // مجموعة Furato
+        Furato: {
           yellow: '#FFD700',
           blue: '#1E90FF',
           green: '#32CD32',
@@ -30,8 +30,8 @@ module.exports = {
         'raqqa-river': '#0B5D6B',
         'raqqa-green': '#16A34A',
 
-        'syrazo-blue': '#0ea5e9',
-        'syrazo-yellow': '#F59E0B',
+        'Furato-blue': '#0ea5e9',
+        'Furato-yellow': '#F59E0B',
       },
 
       // خط عربي

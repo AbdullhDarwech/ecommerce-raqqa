@@ -2,7 +2,12 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Order = require('../models/Order');
 const User = require('../models/User');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 
+// إعداد multer
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 // إدارة المنتجات
 exports.getProducts = async (req, res) => {
   try {
@@ -13,15 +18,49 @@ exports.getProducts = async (req, res) => {
   }
 };
 
-exports.createProduct = async (req, res) => {
-  try {
-    const product = new Product(req.body);
-    await product.save();
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(500).json({ error: 'Error creating product' });
+// createProduct مع رفع الصور
+exports.createProduct = [
+  upload.array('images', 10), // اسم الحقل "images"
+  async (req, res) => {
+    try {
+      const { name, description, category, subcategory, brand, pricePurchase, priceRental, stockQuantity, discountPercentage, isBestSeller } = req.body;
+
+      const images = [];
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const uploaded = await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream({ folder: 'products' }, (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            });
+            stream.end(file.buffer);
+          });
+          images.push(uploaded.secure_url);
+        }
+      }
+
+      const product = new Product({
+        name,
+        description,
+        category,
+        subcategory,
+        brand,
+        pricePurchase,
+        priceRental,
+        stockQuantity,
+        discountPercentage,
+        isBestSeller,
+        images
+      });
+
+      await product.save();
+      res.status(201).json(product);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Error creating product' });
+    }
   }
-};
+];
 
 exports.updateProduct = async (req, res) => {
   try {
