@@ -12,6 +12,7 @@ import api from '@/lib/api';
 import { Category, Product } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import Image from 'next/image';
+import { useCart } from '@/context/CartContext';
 
 const MotionDiv = motion.div as any;
 const MotionAside = motion.aside as any;
@@ -21,7 +22,7 @@ export default function Header() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
-  
+  const { cartCount } = useCart();
   // Menus
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false); // Desktop search expand
@@ -37,7 +38,7 @@ export default function Header() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // Mock Data
-  const cartCount = 2; // Ideally from useCart()
+  // const cartCount = 2; // Ideally from useCart()
   const wishlistCount = user?.favorites?.length || 0;
 
   const pathname = usePathname();
@@ -292,10 +293,10 @@ export default function Header() {
                 )}
               </Link>
 
-              <Link href="/cart" className="relative p-2 text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-all">
-                <ShoppingCart size={22} />
+              <Link href="/cart" className="relative p-2.5 text-slate-700 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-all">
+                <ShoppingCart size={22} strokeWidth={2.2} />
                 {cartCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white animate-pulse">
+                  <span className="absolute top-1 right-1 w-5 h-5 bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white animate-in zoom-in duration-300">
                     {cartCount}
                   </span>
                 )}

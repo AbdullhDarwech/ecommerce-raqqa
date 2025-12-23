@@ -42,7 +42,7 @@ export default function LoginPage() {
         {/* الجانب الأيمن: الترحيب والصورة */}
         <div className="w-full md:w-1/2 bg-gray-900 relative hidden md:block">
           <Image
-            src="/images/31.jpg"
+            src="/images/reg.png"
             alt="Login Banner"
             fill
             className="object-cover opacity-60"

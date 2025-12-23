@@ -13,7 +13,7 @@ export default function Footer() {
           <div>
             <Link href="/" className="flex items-center gap-2 mb-6">
               <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
-                S
+                F
               </div>
               <span className="font-bold text-2xl text-white">Furato</span>
             </Link>

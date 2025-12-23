@@ -1,59 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const Category = require('../models/Category');
+const categoryController = require('../controllers/categoryController');
 const { authenticate, authorizeAdmin } = require('../middleware/auth');
-const upload = require('../lib/cloudinary'); // نفس ملف multer + Cloudinary
+const multer = require('multer');
 
-// إنشاء فئة جديدة
-router.post('/', authenticate, authorizeAdmin, upload.single('image'), async (req, res) => {
-  try {
-    const { name, description, subcategories, localInventoryNotes } = req.body;
+// إعداد multer للتخزين المؤقت قبل إعادة التسمية
+const upload = multer({ dest: 'uploads/' });
 
-    const newCategory = new Category({
-      name,
-      description,
-      localInventoryNotes,
-      subcategories: subcategories ? JSON.parse(subcategories) : [],
-      imageUrl: req.file ? req.file.path : null, // Cloudinary URL
-    });
+// المسارات العامة
+router.get('/', categoryController.getAllCategories);
 
-    await newCategory.save();
-    res.status(201).json(newCategory);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error creating category' });
-  }
-});
-
-// تحديث فئة موجودة مع صورة جديدة
-router.put('/:id', authenticate, authorizeAdmin, upload.single('image'), async (req, res) => {
-  try {
-    const { name, description, subcategories, localInventoryNotes } = req.body;
-    const category = await Category.findById(req.params.id);
-    if (!category) return res.status(404).json({ error: 'Category not found' });
-
-    category.name = name || category.name;
-    category.description = description || category.description;
-    category.localInventoryNotes = localInventoryNotes || category.localInventoryNotes;
-    category.subcategories = subcategories ? JSON.parse(subcategories) : category.subcategories;
-    if (req.file) category.imageUrl = req.file.path; // Cloudinary URL
-
-    await category.save();
-    res.json(category);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error updating category' });
-  }
-});
-
-// جلب جميع الفئات
-router.get('/', async (req, res) => {
-  try {
-    const categories = await Category.find();
-    res.json(categories);
-  } catch (err) {
-    res.status(500).json({ error: 'Error fetching categories' });
-  }
-});
+// مسارات الإدارة
+router.post('/', authenticate, authorizeAdmin, upload.single('image'), categoryController.createCategory);
+router.put('/:id', authenticate, authorizeAdmin, upload.single('image'), categoryController.updateCategory);
+router.delete('/:id', authenticate, authorizeAdmin, categoryController.deleteCategory);
 
 module.exports = router;

@@ -1,20 +1,27 @@
+
 export interface Category {
   _id: string;
   name: string;
   description?: string;
   imageUrl: string;
-  localInventoryNotes?: string;
   subcategories?: string[];
-  slug?: string;
+  attributeConfig?: string[]; // الخصائص المعرفة للفئة
 }
 
-export interface Review {
+// إضافة واجهة المتجر
+export interface Store {
   _id: string;
-  product: string;
-  user: User | string;
-  rating: number;
-  comment: string;
-  date?: string;
+  name: string;
+  owner?: string | User;
+  description?: string[];
+  logo?: string;
+  coverImage?: string;
+  categories?: string[] | Category[];
+  address?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+  createdAt?: string;
 }
 
 export interface Product {
@@ -22,6 +29,7 @@ export interface Product {
   name: string;
   description: string[];
   category: string | Category;
+  subcategory?: string;
   brand: string;
   pricePurchase: number;
   priceRental?: number;
@@ -30,15 +38,9 @@ export interface Product {
   images: string[];
   stockQuantity: number;
   isBestSeller: boolean;
-  reviews?: Review[];
+  store?: string | Store | any;
+  specifications?: Record<string, string>; // القيم الفعلية للخصائص
   createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface Address {
-  street: string;
-  city: string;
-  details: string;
 }
 
 export interface User {
@@ -46,10 +48,14 @@ export interface User {
   email: string;
   name: string;
   phone?: string;
-  addresses?: Address[];
-  paymentMethods?: any[];
   role: 'user' | 'admin';
   favorites?: string[];
+  createdAt?: string;
+  addresses?: {
+    city: string;
+    street: string;
+    details?: string;
+  }[];
 }
 
 export interface CartItem {
@@ -58,47 +64,27 @@ export interface CartItem {
   orderType: 'purchase' | 'rental';
 }
 
-export interface Cart {
-  _id: string;
-  user: string;
-  items: CartItem[];
+// إضافة واجهة عنصر الطلب
+export interface OrderItem {
+  _id?: string;
+  product: Product;
+  quantity: number;
+  priceAtTime: number;
+  orderType: 'purchase' | 'rental';
 }
 
+// إضافة واجهة الطلب
 export interface Order {
   _id: string;
-  user: string;
+  user: string | User;
+  items: OrderItem[];
   totalPrice: number;
   status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
-  orderType: 'purchase' | 'rental';
-  deliveryAddress: any;
-  items: any[];
-  createdAt?: string;
-}
-
-export interface AdminStats {
-  products: number;
-  orders: number;
-  users: number;
-}
-
-export interface UserStats {
-  orders: number;
-  favorites: number;
-  productsViewed: number;
-}
-
-export interface Store {
-  _id: string;
-  name: string;
-  description: string[];
-  address?: string;
+  deliveryAddress: {
+    city: string;
+    street: string;
+    details?: string;
+  };
   phone?: string;
-  email?: string;
-  logo?: string;
-  coverImage?: string;
-  categories?: string[];
-  owner?: string | User;
-  isActive: boolean;
   createdAt?: string;
-  updatedAt?: string;
 }

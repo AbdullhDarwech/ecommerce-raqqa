@@ -1,166 +1,144 @@
-// const User = require('../models/User');
-// const bcrypt = require('bcryptjs');
-// const jwt = require('jsonwebtoken');
-
-// exports.register = async (req, res) => {
-//   try {
-//     const { email, password, name } = req.body;
-//     const hashedPassword = await bcrypt.hash(password, 10);
-//     const user = new User({ email, password: hashedPassword, name });
-//     await user.save();
-//     res.status(201).json({ message: 'User registered' });
-//   } catch (error) {
-//     res.status(500).json({ error: 'Registration failed' });
-//   }
-// };
-
-// exports.login = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-//     const user = await User.findOne({ email });
-//     if (!user || !(await bcrypt.compare(password, user.password))) {
-//       return res.status(401).json({ error: 'Invalid credentials' });
-//     }
-//     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'secret');
-//     res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
-//   } catch (error) {
-//     res.status(500).json({ error: 'Login failed' });
-//   }
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// Generate JWT with Role
 const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret123', {
-    expiresIn: '30d',
-  });
+  return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret123', { expiresIn: '30d' });
 };
 
-// @desc    Register new user
-// @route   POST /api/auth/register
-// @access  Public
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
 
-    // Validation
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'الرجاء إدخال الاسم والبريد الإلكتروني وكلمة المرور' });
+    // --- نظام التحقق المقالي (Backend Validation Protocol) ---
+    
+    // 1. التحقق من اكتمال البيانات الأساسية
+    if (!name || !email || !password || !phone) {
+      return res.status(400).json({ error: 'عذراً، لا يمكننا معالجة طلبك بدون إكمال كافة البيانات الأساسية (الاسم، البريد، الهاتف، كلمة المرور).' });
     }
 
-    // Check if user exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ error: 'البريد الإلكتروني مسجل مسبقاً' });
+    // 2. التحقق من صحة الاسم (على الأقل اسمين)
+    if (name.trim().split(' ').length < 2) {
+      return res.status(400).json({ error: 'يرجى إدخال الاسم الكامل (الاسم والكنية) لضمان موثوقية حسابك في النظام.' });
     }
 
-    // Determine Role: First user ever registered becomes 'admin', others 'user'
+    // 3. التحقق من صيغة البريد الإلكتروني
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'البريد الإلكتروني الذي أدخلته غير صالح، يرجى التأكد من كتابة البريد بشكل صحيح (example@domain.com).' });
+    }
+
+    // 4. التحقق من رقم الهاتف (صيغة سورية: 09xxxxxxxx)
+    const phoneRegex = /^09[3-9][0-9]{7}$/;
+    if (!phoneRegex.test(phone.trim())) {
+      return res.status(400).json({ error: 'رقم الهاتف يجب أن يكون رقماً سورياً صالحاً يبدأ بـ 09 ويتكون من 10 أرقام.' });
+    }
+
+    // 5. التحقق من قوة كلمة المرور
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'لأمان حسابك، يجب أن تتكون كلمة المرور من 8 محارف على الأقل.' });
+    }
+
+    // --- التحقق من التكرار في قاعدة البيانات ---
+
+    const emailExists = await User.findOne({ email: email.toLowerCase() });
+    if (emailExists) {
+      return res.status(400).json({ error: 'هذا البريد الإلكتروني مرتبط بحساب نشط بالفعل، هل نسيت كلمة المرور؟' });
+    }
+
+    const phoneExists = await User.findOne({ phone: phone.trim() });
+    if (phoneExists) {
+      return res.status(400).json({ error: 'رقم الهاتف هذا مسجل مسبقاً، يرجى استخدام رقم آخر أو تسجيل الدخول لحسابك.' });
+    }
+
+    // --- إنشاء الحساب بعد اجتياز كافة البروتوكولات ---
+
     const isFirstAccount = (await User.countDocuments({})) === 0;
     const role = isFirstAccount ? 'admin' : 'user';
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      phone,
-      role
+    const user = await User.create({ 
+      name, 
+      email: email.toLowerCase(), 
+      password: hashedPassword, 
+      phone: phone.trim(), 
+      role 
     });
 
-    if (user) {
-      // Pass role to token generator
-      const token = generateToken(user._id, user.role);
-      
-      res.status(201).json({
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-        },
-        token: token,
-      });
-    } else {
-      res.status(400).json({ error: 'بيانات المستخدم غير صحيحة' });
-    }
+    res.status(201).json({ 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        phone: user.phone, 
+        role: user.role 
+      }, 
+      token: generateToken(user._id, user.role) 
+    });
+
   } catch (error) {
-    console.error("Register Error:", error);
-    res.status(500).json({ error: 'حدث خطأ في الخادم أثناء التسجيل' });
+    console.error('Registration Security Error:', error);
+    res.status(500).json({ error: 'حدث عطل تقني غير متوقع أثناء معالجة بياناتك، يرجى المحاولة لاحقاً.' });
   }
 };
 
-// @desc    Authenticate a user
-// @route   POST /api/auth/login
-// @access  Public
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Check for user email
-    const user = await User.findOne({ email });
-
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
     if (user && (await bcrypt.compare(password, user.password))) {
-      // Pass role to token generator
-      const token = generateToken(user._id, user.role);
-
-      res.json({
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-        },
-        token: token,
+      res.json({ 
+        user: { 
+          id: user._id, 
+          name: user.name, 
+          email: user.email, 
+          phone: user.phone, 
+          role: user.role 
+        }, 
+        token: generateToken(user._id, user.role) 
       });
     } else {
-      res.status(401).json({ error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' });
+      res.status(401).json({ error: 'بيانات الدخول غير متطابقة مع سجلاتنا النخبوية.' });
     }
   } catch (error) {
-    console.error("Login Error:", error);
-    res.status(500).json({ error: 'حدث خطأ في الخادم' });
+    res.status(500).json({ error: 'عطل في خوادم المصادقة.' });
   }
 };
 
-// @desc    Get user profile
-// @route   GET /api/users/profile
-// @access  Private
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
-    if (user) {
-      res.json(user);
-    } else {
-      res.status(404).json({ message: 'المستخدم غير موجود' });
-    }
+    res.json(user);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: 'تعذر استرداد بيانات الملف الشخصي.' });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'المستخدم غير معرف.' });
+
+    user.name = req.body.name || user.name;
+    
+    if (req.body.phone && req.body.phone !== user.phone) {
+        const phoneExists = await User.findOne({ phone: req.body.phone });
+        if (phoneExists) return res.status(400).json({ error: 'رقم الهاتف الجديد مستخدم بالفعل.' });
+        user.phone = req.body.phone;
+    }
+    
+    if (req.body.password) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(req.body.password, salt);
+    }
+    
+    await user.save();
+    res.json({ message: 'تم تحديث سجلاتك بنجاح.' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطأ أثناء التحديث.' });
   }
 };

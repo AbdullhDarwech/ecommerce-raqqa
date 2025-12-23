@@ -1,22 +1,14 @@
 const jwt = require('jsonwebtoken');
-
-const authenticate = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-
-  if (!token) return res.status(401).json({ error: 'Access denied' });
-
+exports.authenticate = (req, res, next) => {
+  const token = req.header('Authorization')?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'لا يوجد تصريح' });
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
     req.user = decoded;
     next();
-  } catch (err) {
-    res.status(400).json({ error: 'Invalid token' });
-  }
+  } catch (e) { res.status(401).json({ error: 'توكن غير صالح' }); }
 };
-
-const authorizeAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
-  next();
+exports.authorizeAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') next();
+  else res.status(403).json({ error: 'غير مسموح للمستخدم العادي' });
 };
-
-module.exports = { authenticate, authorizeAdmin };

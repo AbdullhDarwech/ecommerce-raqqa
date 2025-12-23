@@ -16,7 +16,7 @@ export default function CartPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const shippingCost = cartTotal > 500 ? 0 : 25; 
+  const shippingCost = cartTotal > 500 ? 0 : 0; 
   const total = cartTotal + shippingCost;
 
   const handleCheckout = () => {

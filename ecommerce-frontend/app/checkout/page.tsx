@@ -29,7 +29,7 @@ export default function CheckoutPage() {
     }
   }, [cartItems, router]);
 
-  const shippingCost = cartTotal > 500 ? 0 : 25;
+  const shippingCost = cartTotal > 500 ? 0 : 0;
   const finalTotal = cartTotal + shippingCost;
 
   const handleSubmit = async (e: React.FormEvent) => {

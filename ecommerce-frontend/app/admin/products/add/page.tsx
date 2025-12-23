@@ -1,10 +1,18 @@
+
 'use client';
 
-import { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Category, Store } from '@/lib/types';
-import { ArrowRight, Plus, Trash2, CloudUpload, Save, Loader2 } from 'lucide-react';
+import { 
+  ArrowRight, 
+  Plus, 
+  Trash2, 
+  UploadCloud, 
+  Save, 
+  Loader2 
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function AddProductPage() {
@@ -17,7 +25,6 @@ export default function AddProductPage() {
     name: '',
     description: [''],
     category: '',
-    subcategory: '',
     brand: '',
     pricePurchase: '',
     priceRental: '',
@@ -29,50 +36,62 @@ export default function AddProductPage() {
   });
 
   useEffect(() => {
-    // Fetch Categories & Stores for dropdowns
-    api.get('/admin/categories').then(res => setCategories(res.data)).catch(console.error);
-    api.get('/admin/stores').then(res => setStores(res.data)).catch(console.error);
+    const fetchBaseData = async () => {
+      try {
+        const [catRes, storeRes] = await Promise.all([
+          api.get('/admin/categories'),
+          api.get('/admin/stores')
+        ]);
+        setCategories(catRes.data || []);
+        setStores(storeRes.data || []);
+      } catch (err) {
+        console.error("Error loading base data", err);
+      }
+    };
+    fetchBaseData();
   }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
-      setFormData({ ...formData, [name]: checked });
+      setFormData(prev => ({ ...prev, [name]: checked }));
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
   const handleDescriptionChange = (value: string, index: number) => {
     const desc = [...formData.description];
     desc[index] = value;
-    setFormData({ ...formData, description: desc });
+    setFormData(prev => ({ ...prev, description: desc }));
   };
 
-  const addDescriptionLine = () => setFormData({ ...formData, description: [...formData.description, ''] });
+  const addDescriptionLine = () => setFormData(prev => ({ ...prev, description: [...prev.description, ''] }));
+  
   const removeDescriptionLine = (index: number) => {
     if (formData.description.length === 1) return;
     const desc = [...formData.description];
     desc.splice(index, 1);
-    setFormData({ ...formData, description: desc });
+    setFormData(prev => ({ ...prev, description: desc }));
   };
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFormData({ ...formData, images: [...formData.images, ...Array.from(e.target.files)] });
+      setFormData(prev => ({ ...prev, images: [...prev.images, ...Array.from(e.target.files!)] }));
     }
   };
 
   const removeImage = (index: number) => {
     const imgs = [...formData.images];
     imgs.splice(index, 1);
-    setFormData({ ...formData, images: imgs });
+    setFormData(prev => ({ ...prev, images: imgs }));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!formData.name || !formData.category || !formData.pricePurchase) {
-      alert('الرجاء تعبئة الحقول الأساسية');
+      alert('الرجاء تعبئة كافة الحقول المطلوبة');
       return;
     }
     
@@ -81,17 +100,16 @@ export default function AddProductPage() {
       const data = new FormData();
       data.append('name', formData.name);
       data.append('category', formData.category);
-      data.append('subcategory', formData.subcategory);
       data.append('brand', formData.brand);
       data.append('pricePurchase', formData.pricePurchase);
       data.append('priceRental', formData.priceRental);
       data.append('stockQuantity', formData.stockQuantity);
       data.append('discountPercentage', formData.discountPercentage);
       data.append('isBestSeller', formData.isBestSeller.toString());
-      if(formData.store) data.append('store', formData.store);
+      if (formData.store) data.append('store', formData.store);
 
-      formData.description.forEach((desc, i) => {
-          if(desc) data.append(`description[${i}]`, desc);
+      formData.description.forEach((desc) => {
+          if (desc.trim()) data.append('description', desc);
       });
 
       formData.images.forEach((file) => {
@@ -105,123 +123,142 @@ export default function AddProductPage() {
       router.push('/admin/products');
     } catch (error) {
       console.error(error);
-      alert('فشل إنشاء المنتج');
+      alert('فشل في إضافة المنتج، تأكد من صحة البيانات');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="flex items-center gap-4">
-        <Link href="/admin/products" className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
-            <ArrowRight size={20} />
+    <div className="max-w-5xl mx-auto space-y-10 pb-20">
+      <div className="flex items-center gap-6">
+        <Link href="/admin/products" className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-gray-500 hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-gray-100 shadow-sm">
+            <ArrowRight size={24} />
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900">إضافة منتج جديد</h1>
+        <h1 className="text-4xl font-black text-gray-900 tracking-tight">إضافة منتج جديد</h1>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 space-y-8">
-        
-        {/* Basic Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">اسم المنتج <span className="text-red-500">*</span></label>
-              <input name="name" value={formData.name} onChange={handleChange} className="w-full bg-gray-50 border rounded-xl px-4 py-3" />
-           </div>
-           <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">العلامة التجارية</label>
-              <input name="brand" value={formData.brand} onChange={handleChange} className="w-full bg-gray-50 border rounded-xl px-4 py-3" />
-           </div>
-           <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">الفئة <span className="text-red-500">*</span></label>
-              <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-50 border rounded-xl px-4 py-3">
-                 <option value="">اختر الفئة</option>
-                 {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-              </select>
-           </div>
-           <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">الفئة الفرعية</label>
-              <input name="subcategory" value={formData.subcategory} onChange={handleChange} className="w-full bg-gray-50 border rounded-xl px-4 py-3" />
-           </div>
-           <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">المتجر (اختياري)</label>
-              <select name="store" value={formData.store} onChange={handleChange} className="w-full bg-gray-50 border rounded-xl px-4 py-3">
-                 <option value="">اختر المتجر</option>
-                 {stores.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-              </select>
-           </div>
-        </div>
-
-        {/* Pricing & Stock */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-           <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">سعر الشراء</label>
-              <input type="number" name="pricePurchase" value={formData.pricePurchase} onChange={handleChange} className="w-full bg-gray-50 border rounded-xl px-4 py-3" />
-           </div>
-           <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">سعر التأجير (اختياري)</label>
-              <input type="number" name="priceRental" value={formData.priceRental} onChange={handleChange} className="w-full bg-gray-50 border rounded-xl px-4 py-3" />
-           </div>
-           <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">الكمية</label>
-              <input type="number" name="stockQuantity" value={formData.stockQuantity} onChange={handleChange} className="w-full bg-gray-50 border rounded-xl px-4 py-3" />
-           </div>
-           <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">الخصم (%)</label>
-              <input type="number" name="discountPercentage" value={formData.discountPercentage} onChange={handleChange} className="w-full bg-gray-50 border rounded-xl px-4 py-3" />
-           </div>
-        </div>
-
-        {/* Description */}
-        <div className="space-y-3">
-            <label className="text-sm font-bold text-gray-700">الوصف (نقاط)</label>
-            {formData.description.map((desc, i) => (
-                <div key={i} className="flex gap-2">
-                    <input
-                        value={desc}
-                        onChange={(e) => handleDescriptionChange(e.target.value, i)}
-                        className="flex-1 bg-gray-50 border rounded-xl px-4 py-3"
-                    />
-                    <button type="button" onClick={() => removeDescriptionLine(i)} className="p-3 text-red-500 bg-red-50 rounded-xl">
-                        <Trash2 size={20} />
-                    </button>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-white rounded-[3rem] p-10 shadow-sm border border-gray-100 space-y-8">
+            <h2 className="text-2xl font-black text-gray-800 border-b pb-4">المعلومات الأساسية</h2>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-black text-gray-700">اسم المنتج <span className="text-red-500">*</span></label>
+                <input 
+                  name="name" 
+                  value={formData.name} 
+                  onChange={handleChange} 
+                  placeholder="مثال: آيفون 15 برو ماكس"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all font-bold" 
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-black text-gray-700">العلامة التجارية</label>
+                  <input name="brand" value={formData.brand} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4" />
                 </div>
-            ))}
-            <button type="button" onClick={addDescriptionLine} className="text-sm font-bold text-emerald-600 flex items-center gap-1">
-                <Plus size={16} /> إضافة سطر
-            </button>
-        </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-black text-gray-700">الفئة <span className="text-red-500">*</span></label>
+                  <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold">
+                    <option value="">اختر الفئة</option>
+                    {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
 
-        {/* Images */}
-        <div className="space-y-4">
-           <label className="block text-sm font-bold text-gray-700">صور المنتج</label>
-           <div className="flex flex-wrap gap-4">
+            <div className="space-y-4">
+              <label className="text-sm font-black text-gray-700">وصف المنتج (مميزات)</label>
+              {formData.description.map((desc, i) => (
+                <div key={i} className="flex gap-4">
+                  <input
+                    value={desc}
+                    onChange={(e) => handleDescriptionChange(e.target.value, i)}
+                    className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4"
+                    placeholder={`النقطة رقم ${i + 1}`}
+                  />
+                  <button type="button" onClick={() => removeDescriptionLine(i)} className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center hover:bg-rose-100 transition-colors shrink-0">
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              ))}
+              <button type="button" onClick={addDescriptionLine} className="text-emerald-600 font-black flex items-center gap-2 hover:bg-emerald-50 px-6 py-3 rounded-2xl transition-all w-fit">
+                <Plus size={20} /> إضافة سطر جديد
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[3rem] p-10 shadow-sm border border-gray-100 space-y-8">
+            <h2 className="text-2xl font-black text-gray-800 border-b pb-4">الصور</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               {formData.images.map((file, i) => (
-                 <div key={i} className="relative w-24 h-24 border rounded-xl overflow-hidden group">
+                 <div key={i} className="relative aspect-square border-4 border-gray-100 rounded-[2rem] overflow-hidden group">
                     <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="preview" />
-                    <button onClick={() => removeImage(i)} className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                       <Trash2 size={20} />
+                    <button type="button" onClick={() => removeImage(i)} className="absolute inset-0 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                       <Trash2 size={24} />
                     </button>
                  </div>
               ))}
-              <label className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition-colors">
-                 <CloudUpload size={24} className="text-gray-400" />
-                 <span className="text-xs text-gray-500 mt-1">رفع</span>
+              <label className="aspect-square border-4 border-dashed border-gray-100 rounded-[2.5rem] flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all text-gray-400 hover:text-emerald-600">
+                 <UploadCloud size={40} />
+                 <span className="text-xs font-black mt-2">رفع صورة</span>
                  <input type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*" />
               </label>
-           </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-            <input type="checkbox" id="isBestSeller" name="isBestSeller" checked={formData.isBestSeller} onChange={(e) => setFormData({...formData, isBestSeller: e.target.checked})} className="w-5 h-5 rounded" />
-            <label htmlFor="isBestSeller" className="font-bold cursor-pointer">الأكثر مبيعاً</label>
-        </div>
+        <div className="space-y-8">
+          <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100 space-y-6">
+            <h3 className="text-xl font-black text-gray-800">التسعير والمخزون</h3>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-black text-gray-500">سعر البيع ($)</label>
+                <input type="number" name="pricePurchase" value={formData.pricePurchase} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3 font-black text-emerald-600" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-black text-gray-500">سعر التأجير ($)</label>
+                <input type="number" name="priceRental" value={formData.priceRental} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3 font-black text-blue-600" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-black text-gray-500">الكمية</label>
+                  <input type="number" name="stockQuantity" value={formData.stockQuantity} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3 font-black" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-black text-gray-500">الخصم (%)</label>
+                  <input type="number" name="discountPercentage" value={formData.discountPercentage} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3 font-black text-rose-600" />
+                </div>
+              </div>
+            </div>
+          </div>
 
-        <button onClick={handleSubmit} disabled={loading} className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 flex items-center justify-center gap-2">
-          {loading ? <Loader2 className="animate-spin" /> : <Save size={20} />}
-          حفظ المنتج
-        </button>
-      </div>
+          <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100 space-y-6">
+            <h3 className="text-xl font-black text-gray-800">المتجر والبائع</h3>
+            <div className="space-y-2">
+              <label className="text-xs font-black text-gray-500">اختر المتجر المالك</label>
+              <select name="store" value={formData.store} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3 font-bold">
+                 <option value="">متجر عام</option>
+                 {stores.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+              </select>
+            </div>
+            <label className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl cursor-pointer group">
+              <input type="checkbox" name="isBestSeller" checked={formData.isBestSeller} onChange={handleChange} className="w-6 h-6 rounded-lg accent-emerald-600" />
+              <span className="font-black text-sm text-gray-700 group-hover:text-emerald-600 transition-colors">الأكثر مبيعاً</span>
+            </label>
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="w-full bg-emerald-600 text-white py-6 rounded-[2rem] font-black text-xl hover:bg-emerald-700 shadow-3xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-3 disabled:opacity-70"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : <Save size={24} />}
+            حفظ ونشر المنتج
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

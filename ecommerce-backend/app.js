@@ -1,112 +1,88 @@
+
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+require('dotenv').config();
 const connectDB = require('./config/database');
 
-const authRoutes = require('./routes/auth');
-const productRoutes = require('./routes/products');
-const cartRoutes = require('./routes/cart');
-const orderRoutes = require('./routes/orders');
-const storeRoutes = require('./routes/storeRoutes');
+// استيراد الميدل وير الخاص بالرفع
+const upload = require('./middleware/upload');
 
+// استيراد المتحكمات
+const authController = require('./controllers/authController');
+const productController = require('./controllers/productController');
+const categoryController = require('./controllers/categoryController');
+const orderController = require('./controllers/orderController');
+const userController = require('./controllers/userController');
+const storeController = require('./controllers/storeController');
+
+// استيراد الميدل وير
 const { authenticate, authorizeAdmin } = require('./middleware/auth');
-const {
-  getProfile,
-  updateProfile,
-  getFavorites,
-  addToFavorites,
-  changePassword
-} = require('./controllers/userController');
-
-const {
-  getProducts,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  getOrders,
-  updateOrder,
-  getUsers,
-  updateUser
-} = require('./controllers/adminController');
-
-const { getCategories } = require('./controllers/productController');
 
 const app = express();
+
+// الاتصال بقاعدة البيانات
 connectDB();
 
+// الإعدادات العامة
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ----------------------
-// Routes Authentication
-// ----------------------
-app.use('/auth', authRoutes);
+// --- المسارات العامة (Public Routes) ---
+app.get('/categories', categoryController.getAllCategories);
+app.get('/products', productController.getAllProducts);
+app.get('/products/:id', productController.getProductById);
+app.get('/stores', storeController.getAllStores);
+app.get('/stores/:id', storeController.getStoreById); // مسار عام جديد
 
-// ----------------------
-// Routes Products
-// ----------------------
-app.use('/products', productRoutes);
+// --- مسارات المصادقة (Auth) ---
+app.post('/auth/register', authController.register);
+app.post('/auth/login', authController.login);
 
-// ----------------------
-// Routes Cart & Orders
-// ----------------------
-app.use('/cart', cartRoutes);
-app.use('/orders', orderRoutes);
+// --- مسارات المستخدم المحمي (User Protected) ---
+app.get('/users/profile', authenticate, authController.getProfile);
+app.put('/auth/profile', authenticate, authController.updateProfile);
+app.post('/orders', authenticate, orderController.createOrder);
+app.get('/orders', authenticate, orderController.getAllOrders);
 
-// ----------------------
-// Routes Stores
-// ----------------------
-app.use("/stores", storeRoutes);
+// --- مسارات الإدارة (Admin Routes) ---
 
-// ----------------------
-// Routes Categories
-// ----------------------
-app.get('/categories', getCategories);
+// إدارة الفئات
+app.get('/admin/categories', authenticate, authorizeAdmin, categoryController.getAllCategories);
+app.post('/admin/categories', authenticate, authorizeAdmin, upload.single('image'), categoryController.createCategory);
+app.put('/admin/categories/:id', authenticate, authorizeAdmin, upload.single('image'), categoryController.updateCategory);
+app.delete('/admin/categories/:id', authenticate, authorizeAdmin, categoryController.deleteCategory);
 
-// ----------------------
-// Routes Users
-// ----------------------
-app.get('/users/profile', authenticate, getProfile);
-app.put('/users/profile', authenticate, updateProfile);
-app.get('/users/favorites', authenticate, getFavorites);
-app.post('/users/favorites', authenticate, addToFavorites);
-app.put('/users/password', authenticate, changePassword);
+// إدارة الطلبات
+app.get('/admin/orders', authenticate, authorizeAdmin, orderController.getAllOrders);
+app.get('/admin/orders/:id', authenticate, authorizeAdmin, orderController.getOrderById);
+app.put('/admin/orders/:id', authenticate, authorizeAdmin, orderController.updateOrderStatus);
 
-// ----------------------
-// Admin Routes
-// ----------------------
-// Products
-app.get('/admin/products', authenticate, authorizeAdmin, getProducts);
-app.post('/admin/products', authenticate, authorizeAdmin, createProduct);
-app.put('/admin/products/:id', authenticate, authorizeAdmin, updateProduct);
-app.delete('/admin/products/:id', authenticate, authorizeAdmin, deleteProduct);
+// إدارة المنتجات
+app.get('/admin/products', authenticate, authorizeAdmin, productController.getAllProducts);
+app.post('/admin/products', authenticate, authorizeAdmin, upload.array('images', 5), productController.createProduct);
+app.put('/admin/products/:id', authenticate, authorizeAdmin, upload.array('images', 5), productController.updateProduct);
+app.delete('/admin/products/:id', authenticate, authorizeAdmin, productController.deleteProduct);
 
-// Categories
-app.get('/admin/categories', authenticate, authorizeAdmin, getCategories);
-app.post('/admin/categories', authenticate, authorizeAdmin, createCategory);
-app.put('/admin/categories/:id', authenticate, authorizeAdmin, updateCategory);
-app.delete('/admin/categories/:id', authenticate, authorizeAdmin, deleteCategory);
+// إدارة المستخدمين
+app.get('/admin/users', authenticate, authorizeAdmin, userController.getAllUsers);
+app.put('/admin/users/:id', authenticate, authorizeAdmin, userController.updateUserRole);
+app.delete('/admin/users/:id', authenticate, authorizeAdmin, userController.deleteUser);
 
-// Orders
-app.get('/admin/orders', authenticate, authorizeAdmin, getOrders);
-app.put('/admin/orders/:id', authenticate, authorizeAdmin, updateOrder);
+// إدارة المتاجر
+app.get('/admin/stores', authenticate, authorizeAdmin, storeController.getAdminStores);
+app.get('/admin/stores/:id', authenticate, authorizeAdmin, storeController.getStoreById);
+app.post('/admin/stores', authenticate, authorizeAdmin, upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), storeController.createStore);
+app.put('/admin/stores/:id', authenticate, authorizeAdmin, upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), storeController.updateStore);
+app.delete('/admin/stores/:id', authenticate, authorizeAdmin, storeController.deleteStore);
 
-// Users
-app.get('/admin/users', authenticate, authorizeAdmin, getUsers);
-app.put('/admin/users/:id', authenticate, authorizeAdmin, updateUser);
-
-// Stores (Admin management)
-app.get('/admin/stores', authenticate, authorizeAdmin, require('./controllers/storeController').getAllStores);
-app.post('/admin/stores', authenticate, authorizeAdmin, require('./controllers/storeController').createStore);
-app.put('/admin/stores/:id', authenticate, authorizeAdmin, require('./controllers/storeController').updateStore);
-app.delete('/admin/stores/:id', authenticate, authorizeAdmin, require('./controllers/storeController').deleteStore);
-app.get(
-  '/admin/stores/:id', 
-  authenticate, 
-  authorizeAdmin, 
-  require('./controllers/storeController').getStoreById
-);
+// معالج الأخطاء العالمي
+app.use((err, req, res, next) => {
+  console.error("🔥 Global Error:", err);
+  res.status(err.status || 500).json({ 
+    error: err.message || 'حدث خطأ غير متوقع في السيرفر' 
+  });
+});
 
 module.exports = app;

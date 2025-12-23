@@ -1,134 +1,188 @@
+
 const Store = require('../models/Store');
+const Product = require('../models/Product');
 
-// Helper to normalize inputs to arrays (handles both single string and array)
-const normalizeArray = (input) => {
-  if (!input) return [];
-  if (Array.isArray(input)) return input;
-  return [input];
-};
-
-// =============================
-// Get All Stores
-// =============================
-const getAllStores = async (req, res) => {
+/**
+ * @desc    جلب كافة المتاجر النشطة للواجهة العامة
+ * @route   GET /stores
+ */
+exports.getAllStores = async (req, res) => {
   try {
-    const stores = await Store.find();
+    const { search } = req.query;
+    let query = { isActive: true };
+
+    if (search) {
+      query.name = { $regex: search, $options: 'i' };
+    }
+
+    const stores = await Store.find(query)
+      .select('-owner')
+      .sort({ rating: -1, name: 1 });
+
     res.json(stores);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ error: 'فشل جلب المتاجر' });
   }
 };
 
-// =============================
-// Get Store By ID
-// =============================
-const getStoreById = async (req, res) => {
+/**
+ * @desc    جلب كافة المتاجر للوحة الإدارة مع إحصائيات المنتجات
+ * @route   GET /admin/stores
+ */
+exports.getAdminStores = async (req, res) => {
   try {
-    const store = await Store.findById(req.params.id);
-    if (!store) return res.status(404).json({ message: 'المتجر غير موجود' });
-    res.json(store);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    // استخدام Aggregation لجلب المتاجر مع عدد المنتجات في استعلام واحد سريع
+    const stores = await Store.aggregate([
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: 'store',
+          as: 'products_info'
+        }
+      },
+      {
+        $project: {
+          name: 1,
+          logo: 1,
+          isActive: 1,
+          createdAt: 1,
+          phone: 1,
+          address: 1,
+          productCount: { $size: '$products_info' }
+        }
+      },
+      { $sort: { createdAt: -1 } }
+    ]);
+
+    res.json(stores);
+  } catch (error) {
+    console.error("Aggregation error:", error);
+    const backupStores = await Store.find().sort({ createdAt: -1 });
+    res.json(backupStores);
   }
 };
 
-// =============================
-// Create New Store
-// =============================
-const createStore = async (req, res) => {
+/**
+ * @desc    جلب متجر محدد بالتفصيل
+ */
+exports.getStoreById = async (req, res) => {
   try {
-    const { name, address, phone, email, owner, isActive, description, categories } = req.body;
+    const store = await Store.findById(req.params.id)
+      .populate('owner', 'name email phone')
+      .populate('categories', 'name');
 
-    // Handle Images: Construct web-accessible path
-    const logo = req.files && req.files.logo 
-      ? `/uploads/${req.files.logo[0].filename}` 
-      : '';
+    if (!store) return res.status(404).json({ error: 'المتجر غير موجود' });
     
-    const coverImage = req.files && req.files.coverImage 
-      ? `/uploads/${req.files.coverImage[0].filename}` 
-      : '';
+    res.json(store);
+  } catch (error) {
+    res.status(500).json({ error: 'خطأ في جلب بيانات المتجر' });
+  }
+};
 
+/**
+ * @desc    إنشاء متجر جديد
+ */
+exports.createStore = async (req, res) => {
+  try {
+    const { 
+      name, address, phone, email, owner, isActive, 
+      facebook, instagram, whatsapp, workingHours 
+    } = req.body;
+
+    const logo = req.files && req.files['logo'] ? req.files['logo'][0].path : '';
+    const coverImage = req.files && req.files['coverImage'] ? req.files['coverImage'][0].path : '';
+    
     const store = new Store({
       name,
       address,
       phone,
       email,
       owner,
-      isActive: isActive === 'true', // FormData sends boolean as string 'true'
-      description: normalizeArray(description),
-      categories: normalizeArray(categories),
+      workingHours,
+      isActive: isActive === 'true',
+      socialLinks: { facebook, instagram, whatsapp },
       logo,
       coverImage
     });
-
+    
     await store.save();
     res.status(201).json(store);
-  } catch (err) {
-    console.error("Create Store Error:", err);
-    res.status(400).json({ message: err.message });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ error: 'اسم المتجر مسجل مسبقاً' });
+    }
+    res.status(400).json({ error: error.message });
   }
 };
 
-// =============================
-// Update Store
-// =============================
-const updateStore = async (req, res) => {
+/**
+ * @desc    تحديث بيانات متجر
+ * تم التحسين لمعالجة مشاكل الـ Timeout وضمان عدم فقدان البيانات
+ */
+exports.updateStore = async (req, res) => {
   try {
-    const store = await Store.findById(req.params.id);
-    if (!store) return res.status(404).json({ message: 'المتجر غير موجود' });
-
-    // Update Text Fields if present
-    if (req.body.name) store.name = req.body.name;
-    if (req.body.address) store.address = req.body.address;
-    if (req.body.phone) store.phone = req.body.phone;
-    if (req.body.email) store.email = req.body.email;
+    const { id } = req.params;
     
+    // جلب المتجر الحالي للتأكد من وجوده والعمل على بياناته
+    const existingStore = await Store.findById(id);
+    if (!existingStore) return res.status(404).json({ error: 'المتجر غير موجود' });
+
+    const updateData = { ...req.body };
+    
+    // معالجة الصور المرفوعة (إذا وجدت)
+    if (req.files) {
+      if (req.files['logo'] && req.files['logo'][0]) {
+        updateData.logo = req.files['logo'][0].path;
+      }
+      if (req.files['coverImage'] && req.files['coverImage'][0]) {
+        updateData.coverImage = req.files['coverImage'][0].path;
+      }
+    }
+
+    // معالجة حالة النشاط بشكل صحيح (من String إلى Boolean)
     if (req.body.isActive !== undefined) {
-      store.isActive = req.body.isActive === 'true';
+      updateData.isActive = req.body.isActive === 'true';
     }
 
-    // Update Arrays (Robust handling)
-    if (req.body.categories !== undefined) {
-      store.categories = normalizeArray(req.body.categories);
+    // تحديث روابط التواصل الاجتماعي بشكل آمن (Partial Update)
+    if (req.body.facebook || req.body.instagram || req.body.whatsapp) {
+      updateData.socialLinks = {
+        facebook: req.body.facebook || existingStore.socialLinks.facebook,
+        instagram: req.body.instagram || existingStore.socialLinks.instagram,
+        whatsapp: req.body.whatsapp || existingStore.socialLinks.whatsapp
+      };
     }
 
-    if (req.body.description !== undefined) {
-      store.description = normalizeArray(req.body.description);
-    }
-
-    // Update Images
-    if (req.files?.logo) {
-      store.logo = `/uploads/${req.files.logo[0].filename}`;
-    }
-    if (req.files?.coverImage) {
-      store.coverImage = `/uploads/${req.files.coverImage[0].filename}`;
-    }
-
-    await store.save();
+    // تنفيذ التحديث مع التحقق من صحة البيانات (Validators)
+    const store = await Store.findByIdAndUpdate(
+      id, 
+      { $set: updateData }, 
+      { new: true, runValidators: true }
+    );
+    
     res.json(store);
-  } catch (err) {
-    console.error("Update Store Error:", err);
-    res.status(400).json({ message: err.message });
+  } catch (error) {
+    console.error("Update store error:", error);
+    res.status(400).json({ 
+      error: 'فشل تحديث بيانات المتجر. يرجى التحقق من حجم الصور المرفوعة أو جودة الاتصال.' 
+    });
   }
 };
 
-// =============================
-// Delete Store
-// =============================
-const deleteStore = async (req, res) => {
+/**
+ * @desc    حذف متجر
+ */
+exports.deleteStore = async (req, res) => {
   try {
     const store = await Store.findByIdAndDelete(req.params.id);
-    if (!store) return res.status(404).json({ message: 'المتجر غير موجود' });
-    res.json({ message: 'تم حذف المتجر بنجاح' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+    if (!store) return res.status(404).json({ error: 'المتجر غير موجود' });
 
-module.exports = {
-  getAllStores,
-  getStoreById,
-  createStore,
-  updateStore,
-  deleteStore
+    // تعطيل كافة المنتجات المرتبطة بالمتجر المحذوف
+    await Product.updateMany({ store: req.params.id }, { isActive: false });
+
+    res.json({ message: 'تم حذف المتجر وتعطيل منتجاته بنجاح' });
+  } catch (error) {
+    res.status(500).json({ error: 'فشل عملية الحذف' });
+  }
 };
