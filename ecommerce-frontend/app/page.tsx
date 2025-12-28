@@ -219,7 +219,7 @@ export default function HomePage() {
           >
             <AnimatePresence mode="wait">
               <motion.div
-                key={catIndex}
+                key={categoryIndex}
                 initial={{ x: 120, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -120, opacity: 0 }}
