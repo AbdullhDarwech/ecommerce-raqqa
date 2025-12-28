@@ -93,6 +93,7 @@ export default function HomePage() {
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  
   const VISIBLE_CATEGORIES = 4;
   const [categoryIndex, setCategoryIndex] = useState(0);
   const [pauseRotation, setPauseRotation] = useState(false);
@@ -104,6 +105,9 @@ export default function HomePage() {
 
   const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 1.05]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
+  const rotatedCategories = categories
+  .slice(categoryIndex, categoryIndex + VISIBLE_CATEGORIES)
+  .concat(categories.slice(0, Math.max(0, categoryIndex + VISIBLE_CATEGORIES - categories.length)));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -210,8 +214,8 @@ export default function HomePage() {
           {/* 🔁 SERAZO ROTATION (بدون تغيير Grid) */}
           <div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"
-            onMouseEnter={() => setPause(true)}
-            onMouseLeave={() => setPause(false)}
+            onMouseEnter={() => setPauseRotation(true)}
+            onMouseLeave={() => setPauseRotation(false)}
           >
             <AnimatePresence mode="wait">
               <motion.div
