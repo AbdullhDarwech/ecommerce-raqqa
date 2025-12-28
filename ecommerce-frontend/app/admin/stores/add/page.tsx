@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { 
   ArrowRight, Plus, Trash2, UploadCloud, Save, 
   Loader2, Store as StoreIcon, Phone, Mail, MapPin, 
-  Info, CircleCheck, Image as ImageIcon 
+  Info, CircleDashed, Image as ImageIcon 
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
