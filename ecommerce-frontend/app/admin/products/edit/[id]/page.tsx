@@ -3,8 +3,8 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import api from '@/lib/api';
-import { Category, Store } from '@/lib/types';
-import { ArrowRight, Plus, Trash2, Upload, Save, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Category, Store , ProductProperty } from '@/lib/types';
+import { ArrowRight, Plus, Trash2, Upload, Save, Loader2, AlertCircle, CheckCircle, Settings2 } from 'lucide-react';
 import Link from 'next/link';
 
 const getImageUrl = (url: string) => {
@@ -31,6 +31,7 @@ export default function EditProductPage() {
     description: [''],
     category: '',
     subcategory: '',
+    properties: [{ key: '', value: '' }] as ProductProperty[],
     brand: '',
     pricePurchase: '',
     priceRental: '',
@@ -63,6 +64,7 @@ export default function EditProductPage() {
             description: p.description && p.description.length > 0 ? p.description : [''],
             category: typeof p.category === 'object' && p.category ? p.category._id : (p.category || ''),
             subcategory: p.subcategory || '',
+            properties: p.properties && p.properties.length > 0 ? p.properties : [{ key: '', value: '' }],
             brand: p.brand || '',
             pricePurchase: p.pricePurchase || '',
             priceRental: p.priceRental || '',
@@ -82,6 +84,18 @@ export default function EditProductPage() {
     };
     init();
   }, [id]);
+
+  const handlePropertyChange = (index: number, field: 'key' | 'value', value: string) => {
+    const props = [...formData.properties];
+    props[index][field] = value;
+    setFormData(prev => ({ ...prev, properties: props }));
+  };
+  const addProperty = () => setFormData(prev => ({ ...prev, properties: [...prev.properties, { key: '', value: '' }] }));
+  const removeProperty = (index: number) => {
+    const props = [...formData.properties];
+    props.splice(index, 1);
+    setFormData(prev => ({ ...prev, properties: props.length > 0 ? props : [{ key: '', value: '' }] }));
+  };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -147,6 +161,8 @@ export default function EditProductPage() {
       data.append('stockQuantity', formData.stockQuantity.toString());
       data.append('discountPercentage', formData.discountPercentage.toString());
       data.append('isBestSeller', formData.isBestSeller.toString());
+      const validProps = formData.properties.filter(p => p.key.trim() && p.value.trim());
+      data.append('properties', JSON.stringify(validProps));
       if(formData.store) data.append('store', formData.store);
 
       formData.description.forEach((desc) => {
@@ -240,7 +256,19 @@ export default function EditProductPage() {
               </select>
            </div>
         </div>
-        
+        <section className="bg-white rounded-[3rem] p-10 shadow-sm border border-slate-50 space-y-8">
+            <div className="flex justify-between items-center">
+               <h2 className="text-2xl font-black text-slate-900 flex items-center gap-4"><Settings2 /> الخصائص التقنية</h2>
+               <button onClick={addProperty} className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Plus size={18}/></button>
+            </div>
+            {formData.properties.map((p, idx) => (
+              <div key={idx} className="flex gap-4">
+                <input value={p.key} onChange={e => handlePropertyChange(idx, 'key', e.target.value)} className="flex-1 bg-slate-50 rounded-xl px-4 py-3" />
+                <input value={p.value} onChange={e => handlePropertyChange(idx, 'value', e.target.value)} className="flex-1 bg-slate-50 rounded-xl px-4 py-3" />
+                <button onClick={() => removeProperty(idx)} className="text-rose-500"><Trash2 size={20}/></button>
+              </div>
+            ))}
+          </section>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
            <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">سعر الشراء</label>

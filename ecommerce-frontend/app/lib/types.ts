@@ -23,11 +23,21 @@ export interface Store {
   isActive: boolean;
   createdAt?: string;
 }
+export interface Review {
+  _id: string;
+  product: string;
+  user: User | string;
+  rating: number;
+  comment: string;
+  createdAt?: string;
+}
+
 
 export interface Product {
   _id: string;
   name: string;
   description: string[];
+  properties?: ProductProperty[]; // الحقل الجديد للخصائص الفنية
   category: string | Category;
   subcategory?: string;
   brand: string;
@@ -38,9 +48,13 @@ export interface Product {
   images: string[];
   stockQuantity: number;
   isBestSeller: boolean;
-  store?: string | Store | any;
-  specifications?: Record<string, string>; // القيم الفعلية للخصائص
+  store?: string | Store;
+  reviews?: Review[];
   createdAt?: string;
+}
+export interface ProductProperty {
+  key: string;
+  value: string;
 }
 
 export interface User {

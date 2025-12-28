@@ -93,7 +93,9 @@ export default function HomePage() {
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const VISIBLE_CATEGORIES = 4;
+  const [categoryIndex, setCategoryIndex] = useState(0);
+  const [pauseRotation, setPauseRotation] = useState(false);
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -120,7 +122,16 @@ export default function HomePage() {
     };
     fetchData();
   }, []);
-
+  useEffect(() => {
+    if (pauseRotation || categories.length <= VISIBLE_CATEGORIES) return;
+  
+    const interval = setInterval(() => {
+      setCategoryIndex((prev) => (prev + 1) % categories.length);
+    }, 3200);
+  
+    return () => clearInterval(interval);
+  }, [pauseRotation, categories]);
+  
   return (
     <div ref={containerRef} className="relative bg-white selection:bg-emerald-500 selection:text-white">
       
@@ -189,32 +200,44 @@ export default function HomePage() {
       </div>
 
       {/* 3. THE CURATED UNIVERSE (Categories) */}
-      <section className="py-40 bg-white relative z-10">
+      <section className="py-40 bg-white">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-24 gap-8">
-            <div className="space-y-4">
-              <MotionDiv 
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                className="text-emerald-600 font-black text-xs uppercase tracking-[0.4em] block"
-              >
-                Curated Collections
-              </MotionDiv>
-              <h2 className="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter">مجموعات مختارة</h2>
-            </div>
-            <Link href="/products" className="group flex items-center gap-3 text-slate-900 font-black text-lg hover:text-emerald-600 transition-colors">
-              شاهد كافة الأقسام <ArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-            </Link>
+          <div className="flex justify-between mb-24">
+            <h2 className="text-7xl font-black">مجموعات مختارة</h2>
+            <Link href="/products" className="font-black">شاهد الكل</Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-            {categories.slice(0, 4).map((cat, idx) => (
-              <CategoryItem key={cat._id} cat={cat} idx={idx} priority={idx < 2} />
-            ))}
+          {/* 🔁 SERAZO ROTATION (بدون تغيير Grid) */}
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"
+            onMouseEnter={() => setPause(true)}
+            onMouseLeave={() => setPause(false)}
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={catIndex}
+                initial={{ x: 120, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -120, opacity: 0 }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                className="contents"
+              >
+                {rotatedCategories.map((cat, idx) => {
+                  const focus = idx === 1 || idx === 2;
+                  return (
+                    <motion.div
+                      key={cat._id}
+                      animate={{ scale: focus ? 1 : 0.92, opacity: focus ? 1 : 0.7 }}
+                    >
+                      <CategoryItem cat={cat} idx={idx} priority={focus} />
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </section>
-
       {/* 4. LATEST ARRIVALS */}
       <section className="py-40 bg-slate-50 rounded-[6rem]">
         <div className="container mx-auto px-6">

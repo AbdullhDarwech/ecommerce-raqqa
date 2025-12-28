@@ -84,7 +84,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               onClick={handleAddToCart}
               className="w-full py-4 rounded-2xl flex items-center justify-center gap-3 font-black text-[9px] uppercase tracking-widest bg-white/95 backdrop-blur-md text-slate-900 hover:bg-emerald-600 hover:text-white transition-all shadow-2xl"
             >
-              <Plus size={14} /> {isAdded ? 'Added' : 'Add to Bag'}
+              <Plus size={14} /> {isAdded ? 'مضافة' : 'اضافة الى السلة'}
             </button>
           </div>
         </div>
@@ -92,7 +92,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* TEXT CONTENT */}
         <div className="p-6 flex flex-col gap-2 text-right">
           <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">{categoryName}</span>
-          <h3 className="font-black text-slate-900 text-lg leading-tight group-hover:text-emerald-600 transition-colors line-clamp-1">
+          <h3 className="font-black text-slate-900 leading-tight group-hover:text-emerald-600 transition-colors line-clamp-1">
             {product.name}
           </h3>
           <p className="text-xl font-black text-slate-900 tracking-tighter">${currentPrice.toLocaleString()}</p>

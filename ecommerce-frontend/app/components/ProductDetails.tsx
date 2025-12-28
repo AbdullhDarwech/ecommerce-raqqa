@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Star, Heart, ShoppingCart, Minus, Plus, ShieldCheck, RefreshCw, CheckCircle, Truck } from 'lucide-react';
+import { Star, Heart, ShoppingCart, Minus, Plus, ShieldCheck, RefreshCw, CheckCircle, Truck, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Product, Category } from '@/lib/types';
 import { useCart } from '@/context/CartContext';
@@ -148,7 +148,26 @@ export default function ProductDetails({ product }: { product: Product }) {
                </button>
              </div>
            )}
-
+        {product.properties  && (
+            <div className="mb-14 bg-slate-50/70 backdrop-blur-sm rounded-[3rem] p-10 border border-slate-100 shadow-xl">
+              <h3 className="text-xs font-black text-slate-900 mb-10 flex items-center gap-4 uppercase tracking-[0.4em]">
+                <Settings2 size={20} className="text-emerald-500" />
+                المواصفات الفنية المعتمدة
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-16 gap-y-8">
+                {product.properties.map((prop, idx) => (
+                  <div key={idx} className="flex items-center justify-between border-b border-slate-200/50 pb-4 group hover:border-emerald-200 transition-colors">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">
+                       {prop.key}
+                    </span>
+                    <span className="text-base font-bold text-slate-900">
+                       {prop.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
            {/* Quantity & Add to Cart */}
            <div className="flex flex-col sm:flex-row gap-4">
              <div className="flex items-center border border-gray-200 rounded-xl h-14 w-full sm:w-auto">
@@ -264,6 +283,8 @@ export default function ProductDetails({ product }: { product: Product }) {
                      exit={{ opacity: 0, y: -10 }}
                      className="space-y-4"
                    >
+        
+
                      {product.reviews && product.reviews.length > 0 ? (
                         product.reviews.map((review) => (
                            <div key={review._id} className="bg-gray-50 p-4 rounded-xl">
@@ -284,6 +305,7 @@ export default function ProductDetails({ product }: { product: Product }) {
                      )}
                    </MotionDiv>
                 )}
+                
              </AnimatePresence>
            </div>
         </div>
