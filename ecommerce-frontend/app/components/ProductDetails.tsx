@@ -86,7 +86,7 @@ export default function ProductDetails({ product }: { product: Product }) {
                   : 'border-transparent bg-gray-50 opacity-70 hover:opacity-100'
               }`}
             >
-              <Image src={img} alt={`img-${i}`} fill className="object-contain p-2" />
+              <Image src={img} alt={`img-${i}`} fill loading='lazy' className="object-contain p-2" />
             </button>
           ))}
         </div>
