@@ -138,14 +138,14 @@ export default function ProductDetails({ product }: { product: Product }) {
                >
                  شراء
                </button>
-               <button
+               {/* <button
                  onClick={() => setOrderType('rental')}
                  className={`flex-1 md:flex-none md:w-32 py-2.5 text-sm font-bold rounded-lg transition-all text-center ${
                    orderType === 'rental' ? 'bg-white shadow-sm text-gray-900 ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700'
                  }`}
                >
                  تأجير
-               </button>
+               </button> */}
              </div>
            )}
         {product.properties  && (
