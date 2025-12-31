@@ -23,7 +23,7 @@ export default function CategorySlider({ categories }: { categories: Category[] 
       {categories.map(cat => (
         <SwiperSlide key={cat._id}>
           <div className="bg-white p-4 rounded-lg shadow hover:shadow-xl transition text-center border">
-            <Link href={`/categories/${cat.slug ?? cat.name}`} className="relative w-full h-32 flex items-center justify-center mb-4 block">
+            <Link href={`/categories/${cat.name ?? cat.name}`} className="relative w-full h-32 flex items-center justify-center mb-4 block">
               <Image src={cat.imageUrl} alt={cat.name} width={140} height={120} className="object-contain rounded-md" />
             </Link>
             <h3 className="pt-1 text-lg font-semibold">
