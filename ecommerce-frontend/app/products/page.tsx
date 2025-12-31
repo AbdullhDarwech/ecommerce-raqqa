@@ -87,7 +87,6 @@ function ProductsContent() {
       }
     });
 
-    // منطق ذكي: إذا تغيرت الفئة، نمسح القسم الفرعي تلقائياً
     if ('category' in newParams) {
       current.delete('subcategory');
     }
@@ -105,8 +104,7 @@ function ProductsContent() {
   return (
     <div className="bg-white min-h-screen">
       
-      {/* 1. CINEMATIC HERO SECTION */}
-      <section className="relative pt-20 pb-32 bg-slate-950 overflow-hidden">
+      <section className="relative pt-48 pb-32 bg-slate-950 overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
         <div className="absolute -bottom-1 left-0 w-full h-64 bg-gradient-to-t from-white via-white/40 to-transparent" />
         
@@ -127,7 +125,6 @@ function ProductsContent() {
             )}
           </h1>
 
-          {/* Top Subcategory Pills (Mirrored from Sidebar) */}
           <AnimatePresence>
             {activeCategory && activeCategory.subcategories && activeCategory.subcategories.length > 0 && (
               <MotionDiv 
@@ -164,7 +161,6 @@ function ProductsContent() {
         </div>
       </section>
 
-      {/* 2. TOOLS & NAVIGATION BAR */}
       <div className="sticky top-[72px] md:top-[88px] z-40 bg-white/80 backdrop-blur-3xl border-y border-slate-100">
         <div className="container mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
@@ -205,11 +201,9 @@ function ProductsContent() {
         </div>
       </div>
 
-      {/* 3. MAIN GALLERY GRID */}
       <div className="container mx-auto px-6 py-24">
         <div className="flex flex-col lg:flex-row gap-20">
           
-          {/* Sidebar */}
           <aside className="hidden lg:block w-80 shrink-0 space-y-16">
             <section className="space-y-8">
               <div className="flex items-center gap-4">
@@ -231,7 +225,6 @@ function ProductsContent() {
             </section>
           </aside>
 
-          {/* Gallery View */}
           <div className="flex-1 min-w-0">
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-16">
@@ -244,7 +237,7 @@ function ProductsContent() {
                   className={
                     layout === 'grid'
                       ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-12 gap-y-24'
-                      : 'flex flex-col gap-10'
+                      : 'flex flex-col rounded-3xl p-6 flex gap-8 items-center  gap-10'
                   }
                 >
                   <AnimatePresence mode="popLayout">
@@ -256,13 +249,12 @@ function ProductsContent() {
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.7, delay: idx * 0.05 }}
                       >
-                        <ProductCard product={product} />
+                        <ProductCard product={product} layout={layout} />
                       </MotionDiv>
                     ))}
                   </AnimatePresence>
                 </MotionDiv>
 
-                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex flex-col items-center gap-10 pt-20 border-t border-slate-50">
                     <div className="flex items-center gap-4">
@@ -310,7 +302,6 @@ function ProductsContent() {
         </div>
       </div>
 
-      {/* Mobile Filters UI */}
       <AnimatePresence>
         {showMobileFilters && (
           <>

@@ -1,308 +1,216 @@
 
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { 
-  ArrowLeft, ArrowUpRight, Crown, Gem, 
-  Sparkles, MoveDown, ShoppingBag, 
-  ShieldCheck, Truck, Award, Star, 
-  ChevronLeft, Eye, MessageCircle, Play,
-  Zap, Users, Store as StoreIcon
+  Crown, ShieldCheck, Truck, Users, 
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
-import api, { optimizeImage, getBlurPlaceholder } from '@/lib/api';
+import api, { optimizeImage } from '@/lib/api';
 import { Product, Category } from '@/lib/types';
 import ProductCard from '@/components/ProductCard';
 
 const MotionDiv = motion.div as any;
 
-/**
- * خريطة الصور النخبوية - تستخدم Unsplash IDs لضمان أعلى جودة بصرية
- */
-const CATEGORY_VISUALS: Record<string, string> = {
-  'إلكترونيات': 'https://images.unsplash.com/photo-1498049794561-7780e7231661',
-  'أزياء وملابس': 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d',
-  'ساعات': 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49',
-  'عطور': 'https://images.unsplash.com/photo-1541643600914-78b084683601',
-  'حقائب': 'https://images.unsplash.com/photo-1584917865442-de89df76afd3',
-  'أحذية': 'https://images.unsplash.com/photo-1549298916-b41d501d3772',
-  'نظارات': 'https://images.unsplash.com/photo-1572635196237-14b3f281503f',
-  'منزليات': 'https://images.unsplash.com/photo-1616489953149-8651543883c4',
-};
-
-const getCategoryImg = (cat: Category) => {
-  // إذا كان الاسم موجوداً في الخريطة، نستخدم الصورة الاحترافية
-  const eliteImg = CATEGORY_VISUALS[cat.name];
-  if (eliteImg) return eliteImg;
-  
-  // وإلا نستخدم الصورة الأصلية من قاعدة البيانات
-  return cat.imageUrl;
-};
-
-/**
- * بطاقة الفئة بتصميم "غلاف المجلة"
- */
-const CategoryItem: React.FC<{ cat: Category; idx: number; priority?: boolean }> = ({ cat, idx, priority }) => {
-  const displayImage = getCategoryImg(cat);
-  
-  return (
-    <MotionDiv
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: idx * 0.1, duration: 0.8 }}
-      className="group relative aspect-[3/4] rounded-[3.5rem] overflow-hidden bg-slate-100 shadow-2xl transition-all duration-700 hover:-translate-y-4"
-    >
-      <Link href={`/products?category=${cat._id}`} className="block w-full h-full relative">
-        <Image 
-          src={optimizeImage(displayImage, 600)} 
-          alt={cat.name} 
-          fill 
-          priority={priority}
-          placeholder="blur"
-          blurDataURL={getBlurPlaceholder()}
-          className="object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
-          sizes="(max-width: 768px) 100vw, 25vw"
-        />
-        
-        {/* Cinematic Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-80 transition-opacity group-hover:opacity-95" />
-        <div className="absolute inset-0 border-[16px] border-white/0 group-hover:border-white/5 transition-all duration-700 pointer-events-none" />
-
-        <div className="absolute bottom-12 inset-x-8 text-center space-y-4">
-          <MotionDiv 
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            className="inline-block px-4 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-[8px] text-white font-black uppercase tracking-[0.4em]"
-          >
-            Explore Collection
-          </MotionDiv>
-          <h3 className="font-black text-white text-4xl tracking-tighter transition-all group-hover:text-emerald-400">
-            {cat.name}
-          </h3>
-          <div className="w-12 h-1 bg-emerald-500 mx-auto rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
-        </div>
-      </Link>
-    </MotionDiv>
-  );
-};
-
 export default function HomePage() {
-  const [newArrivals, setNewArrivals] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const VISIBLE_CATEGORIES = 4;
-  const [categoryIndex, setCategoryIndex] = useState(0);
-  const [pauseRotation, setPauseRotation] = useState(false);
   const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"]
-  });
-
-  const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 1.05]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
-  const rotatedCategories = categories
-  .slice(categoryIndex, categoryIndex + VISIBLE_CATEGORIES)
-  .concat(categories.slice(0, Math.max(0, categoryIndex + VISIBLE_CATEGORIES - categories.length)));
+  const carouselRef = useRef<HTMLDivElement>(null);
+  
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "0.3 0.3"] });
+  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.05]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchData = async () => {
       try {
-        const [prodRes, catRes] = await Promise.all([
-          api.get('/products?limit=8'),
-          api.get('/categories')
+        const [catRes, prodRes] = await Promise.all([
+          api.get('/categories'),
+          api.get('/products?limit=12')
         ]);
-        setNewArrivals(prodRes.data.data || []);
-        setCategories(catRes.data || []);
+        
+        if (isMounted) {
+          setCategories(catRes.data || []);
+          setProducts(prodRes.data.data || []);
+        }
       } catch (err) {
-        console.error("Home Interface Error:", err);
+        console.error("Home Data Sync Error:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchData();
+    return () => { isMounted = false; };
   }, []);
-  useEffect(() => {
-    if (pauseRotation || categories.length <= VISIBLE_CATEGORIES) return;
-  
-    const interval = setInterval(() => {
-      setCategoryIndex((prev) => (prev + 1) % categories.length);
-    }, 3200);
-  
-    return () => clearInterval(interval);
-  }, [pauseRotation, categories]);
-  
+
+  const bestSellers = useMemo(() => products.filter(p => p.isBestSeller).slice(0, 4), [products]);
+  const newArrivals = useMemo(() => products.slice(0, 8), [products]);
+
+  const scrollCarousel = (direction: 'left' | 'right') => {
+    if (carouselRef.current) {
+      const scrollAmount = window.innerWidth * 0.4;
+      carouselRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
-    <div ref={containerRef} className="relative bg-white selection:bg-emerald-500 selection:text-white">
+    <div ref={containerRef} className="relative bg-[#FAFAFA] selection:bg-emerald-600 selection:text-white overflow-x-hidden">
       
-      {/* 1. CINEMATIC HERO */}
-      <section className="relative h-screen flex items-center justify-center bg-slate-950 overflow-hidden">
-        <MotionDiv 
-          style={{ scale: heroScale, opacity: heroOpacity }}
-          className="absolute inset-0 z-0"
-        >
+      {/* 1. ELITE HERO SECTION */}
+      <section className="relative h-[90vh] flex items-center justify-center bg-[#05110E] overflow-hidden">
+        <MotionDiv style={{ scale: heroScale, opacity: heroOpacity }} className="absolute inset-0 z-0">
           <Image 
             src="/images/reg.png" 
-            alt="Furato Elite Concept" 
+            alt="Furato Background" 
             fill 
             priority
-            className="object-cover opacity-40 grayscale-[0.3]" 
-            placeholder="blur"
-            blurDataURL={getBlurPlaceholder()}
+            quality={60}
             sizes="100vw"
+            className="object-cover opacity-30" 
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/20 via-slate-950/60 to-white" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#05110E]/40 to-[#FAFAFA]" />
         </MotionDiv>
 
-        <div className="container mx-auto px-6 relative z-10">
+        <div className="container mx-auto px-6 relative z-10 text-center">
           <MotionDiv 
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="text-center"
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.8 }}
           >
-            <div className="inline-flex items-center gap-3 px-6 py-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full text-emerald-400 text-[9px] font-black tracking-[0.5em] uppercase mb-12">
-              <Crown size={14} className="animate-pulse" /> The Sovereign Collective
+            <div className="inline-flex items-center gap-3 px-6 py-2 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full text-emerald-400 text-[10px] font-black tracking-[0.4em] uppercase mb-8">
+              <Crown size={12} /> Elite Shopping Experience
             </div>
             
-            <h1 className="text-[14vw] md:text-[11rem] font-black text-white leading-none tracking-tighter mb-16 select-none">
-              FURATO <span className="text-emerald-400 italic font-light">ELITE</span>
+            <h1 className="text-[12vw] md:text-[8rem] font-black text-white leading-none tracking-tighter mb-12 select-none uppercase">
+              FURATO <br />
+              <span className="text-emerald-500 italic font-light">EMERALD</span>
             </h1>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-              <Link href="/products" className="group relative inline-flex px-14 py-6 bg-white text-slate-950 rounded-full font-black text-lg transition-all hover:scale-105 hover:bg-emerald-500 hover:text-white items-center gap-4 shadow-2xl">
-                <span>اقتنِ مجموعتك</span>
-                <ArrowLeft size={20} className="group-hover:-translate-x-2 transition-transform" />
-              </Link>
-              <Link href="/stores" className="px-14 py-6 bg-white/5 backdrop-blur-md border border-white/10 text-white rounded-full font-black text-lg hover:bg-white/10 transition-all">
-                استكشف المتاجر
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+              <Link href="/products" className="group px-12 py-5 bg-white text-emerald-950 rounded-full font-black text-sm transition-all hover:scale-105 active:scale-95 shadow-xl uppercase tracking-widest">
+                اكتشف المجموعات
               </Link>
             </div>
           </MotionDiv>
         </div>
-
-        <MotionDiv 
-          animate={{ y: [0, 10, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white/30"
-        >
-          <MoveDown size={32} strokeWidth={1} />
-        </MotionDiv>
       </section>
 
-      {/* 2. TRUST STATS BAR */}
-      <div className="container mx-auto px-6 -mt-12 relative z-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 bg-white shadow-[0_50px_100px_rgba(0,0,0,0.08)] rounded-[4rem] overflow-hidden border border-slate-100">
-          <StatBox icon={<Truck size={28}/>} title="توصيل سيادي" desc="توصيل مخصص لعنوانك في الرقة خلال 24 ساعة" />
-          <StatBox icon={<ShieldCheck size={28}/>} title="بروتوكول الأصالة" desc="مقتنيات مضمونة 100% من المصدر" border />
-          <StatBox icon={<Users size={28}/>} title="نادي النخبة" desc="+5000 عضو يثقون في خياراتنا" />
+      {/* 2. STATS RIBBON */}
+      <div className="container mx-auto px-6 -mt-16 relative z-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 bg-white/95 backdrop-blur-xl shadow-2xl rounded-[3rem] border border-emerald-50 overflow-hidden divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-emerald-50">
+          <StatItem icon={<Truck />} title="شحن فائق" desc="توصيل خلال 24 ساعة" />
+          <StatItem icon={<ShieldCheck />} title="ضمان الأصالة" desc="منتجات أصلية موثقة" />
+          <StatItem icon={<Users />} title="مجتمع النخبة" desc="+5000 عميل يثقون بنا" />
         </div>
       </div>
 
-      {/* 3. THE CURATED UNIVERSE (Categories) */}
-      <section className="py-40 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="flex justify-between mb-24">
-            <h2 className="text-7xl font-black">مجموعات مختارة</h2>
-            <Link href="/products" className="font-black">شاهد الكل</Link>
+      {/* 3. CATEGORY CAROUSEL */}
+      <section className="py-24 overflow-hidden">
+        <div className="container mx-auto px-6 mb-12 flex justify-between items-end">
+          <div className="space-y-2">
+             <span className="text-emerald-600 font-black text-[10px] uppercase tracking-[0.3em]">Curated Sections</span>
+             <h2 className="text-4xl md:text-5xl font-black text-emerald-950 tracking-tighter">المجموعات المختارة</h2>
           </div>
-
-          {/* 🔁 SERAZO ROTATION (بدون تغيير Grid) */}
-          <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"
-            onMouseEnter={() => setPauseRotation(true)}
-            onMouseLeave={() => setPauseRotation(false)}
-          >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={categoryIndex}
-                initial={{ x: 120, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -120, opacity: 0 }}
-                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                className="contents"
-              >
-                {rotatedCategories.map((cat, idx) => {
-                  const focus = idx === 1 || idx === 2;
-                  return (
-                    <motion.div
-                      key={cat._id}
-                      animate={{ scale: focus ? 1 : 0.92, opacity: focus ? 1 : 0.7 }}
-                    >
-                      <CategoryItem cat={cat} idx={idx} priority={focus} />
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-            </AnimatePresence>
+          <div className="flex gap-3">
+             <button onClick={() => scrollCarousel('right')} className="w-12 h-12 rounded-full border border-emerald-100 flex items-center justify-center text-emerald-900 shadow hover:bg-emerald-50 transition-all"><ChevronRight size={20}/></button>
+             <button onClick={() => scrollCarousel('left')} className="w-12 h-12 rounded-full border border-emerald-100 flex items-center justify-center text-emerald-900 shadow hover:bg-emerald-50 transition-all"><ChevronLeft size={20}/></button>
           </div>
         </div>
-      </section>
-      {/* 4. LATEST ARRIVALS */}
-      <section className="py-40 bg-slate-50 rounded-[6rem]">
-        <div className="container mx-auto px-6">
-          <div className="flex justify-between items-end mb-20">
-            <div className="space-y-4">
-              <span className="text-emerald-600 font-black text-xs uppercase tracking-[0.4em]">New Prototype Arrivals</span>
-              <h2 className="text-5xl font-black text-slate-900 tracking-tighter">أحدث المقتنيات</h2>
-            </div>
-            <Link href="/products" className="text-slate-400 font-bold hover:text-emerald-600 transition-colors flex items-center gap-2">عرض الكل <ArrowUpRight size={18} /></Link>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
-            {newArrivals.map(product => (
-              <ProductCard key={product._id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* 5. VENDOR CALL TO ACTION */}
-      <section className="container mx-auto px-6 py-40">
-        <MotionDiv 
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          className="bg-slate-950 rounded-[5rem] p-16 md:p-32 text-center relative overflow-hidden shadow-3xl"
+        <div 
+          ref={carouselRef}
+          className="flex gap-6 px-12 overflow-x-auto no-scrollbar pb-10 snap-x"
         >
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
-          <div className="absolute -top-32 -right-32 w-96 h-96 bg-emerald-500/20 rounded-full blur-[120px]" />
-          
-          <div className="relative z-10 space-y-12">
-            <div className="flex justify-center">
-              <div className="w-24 h-24 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center text-emerald-500 border border-emerald-500/20 shadow-2xl">
-                <StoreIcon size={44} />
-              </div>
-            </div>
-            <h2 className="text-5xl md:text-8xl font-black text-white leading-tight tracking-tighter">انقل مقتنياتك <br /> إلى <span className="text-emerald-500 italic font-light">مستوى السيادة</span></h2>
-            <p className="text-slate-400 text-2xl max-w-2xl mx-auto font-medium">نحن نوفر لك المنصة والجمهور والخدمات اللوجستية، أنت فقط وفر الجودة.</p>
-            <div className="flex flex-col sm:flex-row justify-center gap-8 pt-8">
-              <Link href="/register?type=vendor" className="px-16 py-7 bg-white text-slate-950 rounded-3xl font-black text-xl hover:bg-emerald-500 hover:text-white transition-all shadow-xl">
-                سجل كشريك الآن
+          {loading ? (
+            [1,2,3,4,5].map(i => (
+              <div key={i} className="shrink-0 w-[70vw] md:w-[22vw] aspect-[4/5] bg-slate-100 rounded-[2.5rem] animate-pulse" />
+            ))
+          ) : categories.map((cat) => (
+            <div 
+              key={cat._id}
+              className="shrink-0 w-[70vw] md:w-[22vw] aspect-[4/5] relative rounded-[2.5rem] overflow-hidden snap-center group shadow-lg"
+            >
+              <Link href={`/products?category=${cat._id}`} className="block w-full h-full">
+                <Image 
+                  src={optimizeImage(cat.imageUrl, 500)} 
+                  alt={cat.name} 
+                  fill 
+                  sizes="(max-width: 768px) 70vw, 22vw"
+                  className="object-cover transition-transform duration-[1500ms] group-hover:scale-110" 
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/80 via-emerald-950/20 to-transparent" />
+                <div className="absolute bottom-8 inset-x-8 text-center">
+                   <h3 className="text-white text-xl font-bold tracking-tight">{cat.name}</h3>
+                   <div className="mt-2 w-8 h-1 bg-emerald-500 mx-auto rounded-full" />
+                </div>
               </Link>
-              <Link href="/contact" className="px-16 py-7 bg-white/5 border border-white/10 text-white rounded-3xl font-black text-xl hover:bg-white/10 transition-all">
-                تواصل مع الإدارة
-              </Link>
             </div>
-          </div>
-        </MotionDiv>
+          ))}
+        </div>
       </section>
 
+      {/* 4. BEST SELLERS */}
+      {!loading && bestSellers.length > 0 && (
+        <section className="py-24 bg-emerald-950 rounded-[4rem] mx-4 md:mx-8 shadow-3xl overflow-hidden relative">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[120px] rounded-full" />
+           <div className="container mx-auto px-6 relative z-10">
+              <div className="text-center mb-16 space-y-4">
+                <span className="text-emerald-400 font-black text-[10px] uppercase tracking-widest">Global Favorites</span>
+                <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter">الأكثر مبيعاً</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {bestSellers.map((product) => (
+                  <ProductCard key={product._id} product={product} />
+                ))}
+              </div>
+           </div>
+        </section>
+      )}
+
+      {/* 5. NEW ARRIVALS */}
+      <section className="py-32 container mx-auto px-6">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+          <div className="space-y-4">
+             <span className="text-emerald-600 font-black text-[10px] uppercase tracking-widest">Fresh Arrivals</span>
+             <h2 className="text-4xl md:text-6xl font-black text-emerald-950 tracking-tighter">وصل حديثاً</h2>
+          </div>
+          <Link href="/products" className="text-emerald-600 font-black text-xs uppercase tracking-widest border-b-2 border-emerald-100 pb-1 hover:border-emerald-500 transition-all">
+             عرض الكل
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {loading ? (
+             [1,2,3,4,5,6,7,8].map(i => <div key={i} className="aspect-[4/5] bg-slate-50 rounded-[2.5rem] animate-pulse" />)
+          ) : newArrivals.map((product) => (
+            <ProductCard key={product._id} product={product} />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
 
-function StatBox({ icon, title, desc, border }: { icon: React.ReactNode, title: string, desc: string, border?: boolean }) {
+function StatItem({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
   return (
-    <div className={`p-12 flex flex-col items-center text-center gap-5 hover:bg-slate-50 transition-colors duration-500 ${border ? 'md:border-x border-slate-100' : ''}`}>
-      <div className="text-emerald-600 mb-2 p-4 bg-emerald-50 rounded-2xl">{icon}</div>
-      <h4 className="font-black text-slate-900 text-xl tracking-tight">{title}</h4>
-      <p className="text-slate-400 text-sm font-medium leading-relaxed">{desc}</p>
+    <div className="p-10 text-center space-y-3 hover:bg-emerald-50/30 transition-colors">
+       <div className="text-emerald-600 flex justify-center">
+         {React.cloneElement(icon as React.ReactElement, { size: 32 })}
+       </div>
+       <div>
+         <h4 className="font-bold text-emerald-950 text-lg leading-tight">{title}</h4>
+         <p className="text-emerald-900/40 text-[10px] font-medium uppercase mt-2 tracking-widest">{desc}</p>
+       </div>
     </div>
   );
 }
-
-

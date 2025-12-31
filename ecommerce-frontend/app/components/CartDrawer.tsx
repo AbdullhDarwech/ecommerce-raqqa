@@ -74,6 +74,7 @@ export default function CartDrawer() {
                           src={item.product.images?.[0] || '/placeholder.png'} 
                           alt={item.product.name} 
                           fill 
+                          loading='lazy'
                           className="object-cover"
                         />
                       </div>

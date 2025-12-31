@@ -94,7 +94,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 lg:p-14 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header (Mobile Toggle) */}
         <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 lg:hidden">
           <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-600">
@@ -103,7 +103,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span className="mr-4 font-bold text-gray-800">القائمة</span>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-8 md:p-8">
           {children}
         </main>
       </div>
