@@ -27,7 +27,7 @@ export default function CategorySlider({ categories }: { categories: Category[] 
               <Image src={cat.imageUrl} alt={cat.name} width={140} height={120} className="object-contain rounded-md" />
             </Link>
             <h3 className="pt-1 text-lg font-semibold">
-              <Link href={`/categories/${cat.slug ?? cat.name}`} className="hover:text-green-600">{cat.name}</Link>
+              <Link href={`/categories/${cat.name ?? cat.name}`} className="hover:text-green-600">{cat.name}</Link>
             </h3>
           </div>
         </SwiperSlide>
