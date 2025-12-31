@@ -93,7 +93,7 @@ export default function HomePage() {
             
             <h1 className="text-[12vw] md:text-[8rem] font-black text-white leading-none tracking-tighter mb-12 select-none uppercase">
               FURATO <br />
-              <span className="text-emerald-500 italic font-light">EMERALD</span>
+              <span className="text-emerald-500 italic font-light">Elite</span>
             </h1>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
