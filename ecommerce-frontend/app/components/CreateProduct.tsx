@@ -1,6 +1,6 @@
 // file: components/CreateProduct.tsx
 'use client';
-import { useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
@@ -45,10 +45,12 @@ export default function CreateProduct() {
   }, []);
 
   // رفع الصور
-  const handleImageUpload = (e: any) => {
-    setNewImages([...newImages, ...Array.from(e.target.files)]);
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files) as File[];
+      setNewImages([...newImages, ...files]);
+    }
   };
-
   const removeLocalImage = (index: number) => {
     const arr = [...newImages];
     arr.splice(index, 1);

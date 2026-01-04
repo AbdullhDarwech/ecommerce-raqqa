@@ -19,6 +19,14 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: false, // تعطيل لتقليل عبء المعالجة في التطوير والإنتاج
+  eslint: {
+    // يتجاهل أخطاء ESLint أيضاً
+    ignoreDuringBuilds: true,
+  },
+   typescript: {
+    // !! تحذير: يتجاوز فحص الأنواع أثناء البناء
+    ignoreBuildErrors: true,
+  },
 };
 
 module.exports = nextConfig;

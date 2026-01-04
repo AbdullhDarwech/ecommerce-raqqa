@@ -1,19 +1,23 @@
+
 'use client';
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Star, Heart, ShoppingCart, Minus, Plus, ShieldCheck, RefreshCw, CheckCircle, Truck, Settings2 } from 'lucide-react';
+import { 
+  Star, Heart, ShoppingBag, Minus, Plus, 
+  ShieldCheck, RefreshCw, CheckCircle, Truck, 
+  Settings2, ArrowRight, Share2 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Product, Category } from '@/lib/types';
+import { Product } from '@/lib/types';
 import { useCart } from '@/context/CartContext';
+import Link from 'next/link';
 
 const MotionDiv = motion.div as any;
 
 export default function ProductDetails({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(product.images?.[0]);
-  const [orderType, setOrderType] = useState<'purchase' | 'rental'>('purchase');
-  const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description');
   const [isFavorite, setIsFavorite] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   
@@ -21,146 +25,133 @@ export default function ProductDetails({ product }: { product: Product }) {
 
   const handleAddToCart = async () => {
     if (product.stockQuantity < 1) return;
-    
     setIsAdding(true);
-    // Simulate a small delay for better UX feeling
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    addToCart(product, quantity, orderType);
+    // تأخير بسيط لمحاكاة الفخامة في المعالجة
+    await new Promise(resolve => setTimeout(resolve, 600));
+    addToCart(product, quantity, 'purchase');
     setIsAdding(false);
   };
 
-  const handleQuantity = (type: 'inc' | 'dec') => {
-    if (type === 'inc') setQuantity(q => q + 1);
-    if (type === 'dec' && quantity > 1) setQuantity(q => q - 1);
-  };
-
-  const currentPrice = orderType === 'purchase' ? product.pricePurchase : (product.priceRental || product.pricePurchase);
-  
-  // Safe Category Access
-  const categoryName = typeof product.category === 'object' && product.category !== null 
-    ? (product.category as Category).name 
-    : 'عام';
+  const categoryName = typeof product.category === 'object' ? product.category.name : 'مقتنيات فاخرة';
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-8">
-
-      {/* ------------------------------
-          🖼️ Image Gallery Section
-      -------------------------------- */}
-      <div className="space-y-6">
-        <MotionDiv 
-          layoutId={`image-${product._id}`}
-          className="relative w-full aspect-[4/5] md:aspect-square rounded-3xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm group"
+    <div className="py-8 md:py-12 max-w-7xl mx-auto">
+      {/* Navigation & Breadcrumbs */}
+      <div className="flex items-center justify-between mb-10">
+        <Link 
+          href="/products" 
+          className="group flex items-center gap-2 text-emerald-900/60 hover:text-emerald-600 transition-colors text-xs font-black uppercase tracking-widest"
         >
-          <Image
-            src={activeImage || '/placeholder.png'}
-            alt={product.name}
-            fill
-            className="object-contain p-8 group-hover:scale-105 transition-transform duration-500"
-            unoptimized
-          />
-          {product.discountPercentage && (
-             <div className="absolute top-4 left-4 bg-rose-500 text-white font-bold px-3 py-1 rounded-full shadow-lg z-10">
-                خصم {product.discountPercentage}%
-             </div>
-          )}
-          <button 
-            onClick={() => setIsFavorite(!isFavorite)}
-            className={`absolute top-4 right-4 p-3 rounded-full shadow-md z-10 transition-colors ${
-              isFavorite ? 'bg-rose-50 text-rose-500' : 'bg-white text-gray-400 hover:text-rose-500'
-            }`}
-          >
-            <Heart className={isFavorite ? "fill-current" : ""} size={20} />
-          </button>
-        </MotionDiv>
-
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-          {product.images?.map((img, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveImage(img)}
-              className={`relative w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all shrink-0 ${
-                activeImage === img 
-                  ? 'border-emerald-500 shadow-md ring-2 ring-emerald-100' 
-                  : 'border-transparent bg-gray-50 opacity-70 hover:opacity-100'
-              }`}
-            >
-              <Image src={img} alt={`img-${i}`} fill loading='lazy' className="object-contain p-2" />
-            </button>
-          ))}
-        </div>
+          <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          العودة للمعرض
+        </Link>
+        <button className="p-3 bg-stone-50 text-stone-400 hover:text-emerald-600 rounded-2xl transition-all">
+          <Share2 size={18} />
+        </button>
       </div>
 
-      {/* ------------------------------
-          📄 Product Info Section
-      -------------------------------- */}
-      <div className="flex flex-col">
-        <div className="mb-8 border-b border-gray-100 pb-8">
-           <div className="flex items-center gap-3 mb-4">
-             <span className={`text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1 ${product.stockQuantity > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                {product.stockQuantity > 0 ? <CheckCircle size={12} /> : <Minus size={12} />}
-                {product.stockQuantity > 0 ? 'متوفر في المخزون' : 'نفذت الكمية'}
-             </span>
-             <span className="text-gray-300">|</span>
-             <span className="text-gray-500 text-sm">{categoryName}</span>
-           </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
 
-           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">{product.name}</h1>
-           
-           <div className="flex items-center gap-2 mb-6">
-              <div className="flex text-amber-400">
-                {[1,2,3,4,5].map(i => <Star key={i} size={16} className="fill-current" />)}
+        {/* --- 1. GALLERY SECTION --- */}
+        <div className="space-y-6">
+          <MotionDiv 
+            layoutId={`image-${product._id}`}
+            className="relative w-full aspect-square rounded-[3rem] overflow-hidden bg-stone-50 border border-emerald-50 shadow-2xl group"
+          >
+            <Image
+              src={activeImage || '/placeholder.png'}
+              alt={product.name}
+              fill
+              priority
+              className="object-contain p-8 md:p-16 transition-transform duration-1000 group-hover:scale-110"
+              unoptimized
+            />
+            
+            <button 
+              onClick={() => setIsFavorite(!isFavorite)}
+              className={`absolute top-8 left-8 p-4 rounded-2xl shadow-xl z-10 transition-all ${
+                isFavorite ? 'bg-rose-500 text-white' : 'bg-white/90 backdrop-blur-xl text-stone-400 hover:text-rose-500'
+              }`}
+            >
+              <Heart className={isFavorite ? "fill-current" : ""} size={20} />
+            </button>
+            
+            {product.isBestSeller && (
+              <div className="absolute top-8 right-8 bg-emerald-950/90 text-amber-400 px-4 py-2 rounded-xl backdrop-blur-md border border-amber-400/20 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                <Star size={12} fill="currentColor" /> Elite Selection
               </div>
-              <span className="text-gray-400 text-sm font-medium">(4.5 تقييم)</span>
-           </div>
+            )}
+          </MotionDiv>
 
-           <div className="flex items-end gap-3">
-              <span className="text-4xl font-extrabold text-emerald-600">
-                ${currentPrice.toLocaleString()}
-              </span>
-              {product.priceOld && (
-                 <span className="text-xl text-gray-400 line-through mb-2 decoration-2 decoration-rose-200">${product.priceOld}</span>
-              )}
-           </div>
+          <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+            {product.images?.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveImage(img)}
+                className={`relative w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all shrink-0 ${
+                  activeImage === img 
+                    ? 'border-emerald-500 shadow-lg ring-4 ring-emerald-50' 
+                    : 'border-transparent bg-stone-50 opacity-50 hover:opacity-100'
+                }`}
+              >
+                <Image src={img} alt={`view-${i}`} fill className="object-cover p-2" unoptimized />
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Controls */}
-        <div className="space-y-6 mb-8">
-           {/* Order Type Selector */}
-           {product.priceRental && (
-             <div className="bg-gray-50 p-1.5 rounded-xl inline-flex w-full md:w-auto">
-               <button
-                 onClick={() => setOrderType('purchase')}
-                 className={`flex-1 md:flex-none md:w-32 py-2.5 text-sm font-bold rounded-lg transition-all text-center ${
-                   orderType === 'purchase' ? 'bg-white shadow-sm text-gray-900 ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700'
-                 }`}
-               >
-                 شراء
-               </button>
-               {/* <button
-                 onClick={() => setOrderType('rental')}
-                 className={`flex-1 md:flex-none md:w-32 py-2.5 text-sm font-bold rounded-lg transition-all text-center ${
-                   orderType === 'rental' ? 'bg-white shadow-sm text-gray-900 ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700'
-                 }`}
-               >
-                 تأجير
-               </button> */}
+        {/* --- 2. INFO SECTION --- */}
+        <div className="flex flex-col">
+          <div className="mb-10 border-b border-stone-100 pb-10">
+             <div className="flex items-center gap-3 mb-6">
+               <span className={`text-[9px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest flex items-center gap-2 ${product.stockQuantity > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'}`}>
+                  {product.stockQuantity > 0 ? <CheckCircle size={12} /> : <Minus size={12} />}
+                  {product.stockQuantity > 0 ? 'متوفر للاقتناء' : 'نفذت الكمية'}
+               </span>
+               <span className="w-1 h-1 bg-stone-200 rounded-full" />
+               <span className="text-stone-400 text-[9px] font-black uppercase tracking-widest">{categoryName}</span>
              </div>
-           )}
-        {product.properties  && (
-            <div className="mb-14 bg-slate-50/70 backdrop-blur-sm rounded-[3rem] p-10 border border-slate-100 shadow-xl">
-              <h3 className="text-xs font-black text-slate-900 mb-10 flex items-center gap-4 uppercase tracking-[0.4em]">
-                <Settings2 size={20} className="text-emerald-500" />
+
+             <h1 className="text-4xl md:text-5xl font-black text-emerald-950 mb-8 leading-tight tracking-tighter">
+               {product.name}
+             </h1>
+             
+             <div className="flex items-center gap-8">
+                <div className="flex flex-col">
+                   <span className="text-stone-400 text-[10px] font-black uppercase tracking-widest mb-1">القيمة الحالية</span>
+                   <div className="flex items-baseline gap-3">
+                      <span className="text-5xl font-black text-emerald-600 tracking-tighter">
+                        ${product.pricePurchase.toLocaleString()}
+                      </span>
+                      {product.priceOld && (
+                         <span className="text-xl text-stone-300 line-through decoration-emerald-500/20">${product.priceOld}</span>
+                      )}
+                   </div>
+                </div>
+                <div className="h-10 w-px bg-stone-100" />
+                <div className="flex flex-col">
+                   <div className="flex text-amber-500 gap-0.5 mb-1">
+                     {[1,2,3,4,5].map(i => <Star key={i} size={14} fill="currentColor" />)}
+                   </div>
+                   <span className="text-stone-400 text-[9px] font-black tracking-widest">تقييم نُخبوي (4.9)</span>
+                </div>
+             </div>
+          </div>
+
+          {/* Properties Grid */}
+          {product.properties && product.properties.length > 0 && (
+            <div className="mb-10 bg-stone-50/50 rounded-[2rem] p-8 border border-stone-100">
+              <h3 className="text-[10px] font-black text-emerald-950 mb-8 flex items-center gap-3 uppercase tracking-[0.3em]">
+                <Settings2 size={16} className="text-amber-500" />
                 المواصفات الفنية المعتمدة
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-16 gap-y-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6">
                 {product.properties.map((prop, idx) => (
-                  <div key={idx} className="flex items-center justify-between border-b border-slate-200/50 pb-4 group hover:border-emerald-200 transition-colors">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">
+                  <div key={idx} className="flex items-center justify-between border-b border-stone-200/40 pb-3 group">
+                    <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">
                        {prop.key}
                     </span>
-                    <span className="text-base font-bold text-slate-900">
+                    <span className="text-sm font-bold text-emerald-950">
                        {prop.value}
                     </span>
                   </div>
@@ -168,148 +159,85 @@ export default function ProductDetails({ product }: { product: Product }) {
               </div>
             </div>
           )}
-           {/* Quantity & Add to Cart */}
-           <div className="flex flex-col sm:flex-row gap-4">
-             <div className="flex items-center border border-gray-200 rounded-xl h-14 w-full sm:w-auto">
-                <button 
-                  onClick={() => handleQuantity('dec')}
-                  className="w-12 h-full flex items-center justify-center text-gray-500 hover:text-emerald-600 hover:bg-gray-50 rounded-r-xl transition-colors"
-                >
-                  <Minus size={20} />
-                </button>
-                <div className="w-12 h-full flex items-center justify-center font-bold text-gray-900 text-lg border-x border-gray-100">
-                   {quantity}
-                </div>
-                <button 
-                  onClick={() => handleQuantity('inc')}
-                  className="w-12 h-full flex items-center justify-center text-gray-500 hover:text-emerald-600 hover:bg-gray-50 rounded-l-xl transition-colors"
-                >
-                  <Plus size={20} />
-                </button>
+
+          {/* Purchase Controls */}
+          <div className="space-y-8 mb-12">
+             <div className="flex flex-col sm:flex-row gap-6">
+               <div className="flex items-center bg-stone-50 rounded-2xl h-16 w-full sm:w-auto p-1.5 border border-stone-100 shadow-inner">
+                  <button 
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="w-12 h-full flex items-center justify-center text-stone-400 hover:text-emerald-600 hover:bg-white rounded-xl transition-all"
+                  >
+                    <Minus size={20} />
+                  </button>
+                  <div className="w-14 h-full flex items-center justify-center font-black text-emerald-950 text-xl">
+                     {quantity}
+                  </div>
+                  <button 
+                    onClick={() => setQuantity(q => q + 1)}
+                    className="w-12 h-full flex items-center justify-center text-stone-400 hover:text-emerald-600 hover:bg-white rounded-xl transition-all"
+                  >
+                    <Plus size={20} />
+                  </button>
+               </div>
+
+               <button
+                 onClick={handleAddToCart}
+                 disabled={product.stockQuantity < 1 || isAdding}
+                 className={`flex-1 h-16 rounded-2xl font-black text-sm flex items-center justify-center gap-4 transition-all uppercase tracking-[0.2em] shadow-xl ${
+                   product.stockQuantity < 1 
+                   ? 'bg-stone-100 text-stone-300 cursor-not-allowed shadow-none'
+                   : 'bg-emerald-950 text-white hover:bg-emerald-800 hover:shadow-emerald-900/20 active:scale-95'
+                 }`}
+               >
+                  <AnimatePresence mode="wait">
+                    {isAdding ? (
+                      <motion.div 
+                        key="loading"
+                        initial={{ opacity: 0, rotate: 0 }}
+                        animate={{ opacity: 1, rotate: 360 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        <RefreshCw size={24} className="animate-spin" />
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        key="content"
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-3"
+                      >
+                        <ShoppingBag size={20} />
+                        {product.stockQuantity > 0 ? 'اقتناء الآن' : 'غير متوفر'}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+               </button>
              </div>
+          </div>
 
-             <button
-               onClick={handleAddToCart}
-               disabled={product.stockQuantity < 1 || isAdding}
-               className={`flex-1 h-14 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition-all ${
-                 product.stockQuantity < 1 
-                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
-                 : 'bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-emerald-500/30'
-               }`}
-             >
-                {isAdding ? (
-                  <RefreshCw className="animate-spin" size={24} />
-                ) : (
-                  <>
-                    <ShoppingCart size={22} />
-                    {product.stockQuantity > 0 ? 'إضافة للسلة' : 'غير متوفر'}
-                  </>
-                )}
-             </button>
-           </div>
+          {/* Trust Indicators */}
+          <div className="grid grid-cols-2 gap-6 pt-6 border-t border-stone-100">
+             <div className="flex items-center gap-4 group">
+                <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                  <Truck size={22} />
+                </div>
+                <div>
+                   <p className="font-black text-emerald-950 text-[10px] uppercase tracking-tighter">شحن سيادي</p>
+                   <p className="text-[9px] text-stone-400 font-bold tracking-widest mt-0.5">خلال 24 ساعة</p>
+                </div>
+             </div>
+             <div className="flex items-center gap-4 group">
+                <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition-all">
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                   <p className="font-black text-emerald-950 text-[10px] uppercase tracking-tighter">ضمان الأصالة</p>
+                   <p className="text-[9px] text-stone-400 font-bold tracking-widest mt-0.5">100% موثق</p>
+                </div>
+             </div>
+          </div>
         </div>
-
-        {/* Feature Highlights */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-           <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl text-blue-700">
-              <Truck size={24} />
-              <div>
-                 <p className="font-bold text-sm">توصيل سريع</p>
-                 <p className="text-xs opacity-80">داخل الرقة خلال 24 ساعة</p>
-              </div>
-           </div>
-           <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl text-emerald-700">
-              <ShieldCheck size={24} />
-              <div>
-                 <p className="font-bold text-sm">جودة مضمونة</p>
-                 <p className="text-xs opacity-80">منتجات أصلية 100%</p>
-              </div>
-           </div>
-        </div>
-
-        {/* Tabs: Description & Reviews */}
-        <div className="mt-auto">
-           <div className="flex border-b border-gray-200 mb-6">
-              <button
-                onClick={() => setActiveTab('description')}
-                className={`pb-4 px-4 font-bold text-sm transition-all relative ${
-                  activeTab === 'description' ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                الوصف والمميزات
-                {activeTab === 'description' && (
-                  <MotionDiv layoutId="activeTab" className="absolute bottom-0 right-0 left-0 h-0.5 bg-emerald-600 rounded-t-full" />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('reviews')}
-                className={`pb-4 px-4 font-bold text-sm transition-all relative ${
-                  activeTab === 'reviews' ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                التقييمات ({product.reviews?.length || 0})
-                {activeTab === 'reviews' && (
-                  <MotionDiv layoutId="activeTab" className="absolute bottom-0 right-0 left-0 h-0.5 bg-emerald-600 rounded-t-full" />
-                )}
-              </button>
-           </div>
-
-           <div className="min-h-[150px]">
-             <AnimatePresence mode="wait">
-                {activeTab === 'description' ? (
-                   <MotionDiv
-                     key="desc"
-                     initial={{ opacity: 0, y: 10 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     exit={{ opacity: 0, y: -10 }}
-                     className="text-gray-600 leading-relaxed space-y-3"
-                   >
-                     {Array.isArray(product.description) && product.description.length > 0 ? (
-                        product.description.map((line, idx) => (
-                           <div key={idx} className="flex gap-2 items-start">
-                              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-2 shrink-0" />
-                              <p>{line}</p>
-                           </div>
-                        ))
-                     ) : (
-                        <p>لا يتوفر وصف دقيق لهذا المنتج حالياً.</p>
-                     )}
-                   </MotionDiv>
-                ) : (
-                   <MotionDiv
-                     key="reviews"
-                     initial={{ opacity: 0, y: 10 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     exit={{ opacity: 0, y: -10 }}
-                     className="space-y-4"
-                   >
-        
-
-                     {product.reviews && product.reviews.length > 0 ? (
-                        product.reviews.map((review) => (
-                           <div key={review._id} className="bg-gray-50 p-4 rounded-xl">
-                              <div className="flex items-center justify-between mb-2">
-                                 <span className="font-bold text-gray-900">مستخدم</span>
-                                 <div className="flex text-amber-400 text-xs">
-                                    {Array.from({length: review.rating}).map((_, i) => <Star key={i} size={12} className="fill-current" />)}
-                                 </div>
-                              </div>
-                              <p className="text-gray-600 text-sm">{review.comment}</p>
-                           </div>
-                        ))
-                     ) : (
-                        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                           <p>لا توجد تقييمات بعد.</p>
-                           <button className="text-emerald-600 text-sm font-bold mt-2 hover:underline">كن أول من يقيم هذا المنتج</button>
-                        </div>
-                     )}
-                   </MotionDiv>
-                )}
-                
-             </AnimatePresence>
-           </div>
-        </div>
-
       </div>
     </div>
   );

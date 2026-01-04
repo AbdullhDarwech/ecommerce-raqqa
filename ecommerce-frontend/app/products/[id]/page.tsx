@@ -59,7 +59,7 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-14">
       <ProductDetails product={product} />
 
       {relatedProducts.length > 0 && (

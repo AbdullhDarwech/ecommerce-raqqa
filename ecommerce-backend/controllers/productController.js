@@ -46,20 +46,25 @@ exports.getAllProducts = async (req, res) => {
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(`🔎 [CONTROLLER] Attempting to find product with ID: ${id}`);
 
-    // التحقق من صحة المعرف أولاً
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'المعرف المرسل غير صالح' });
+      console.warn(`❌ [CONTROLLER] Invalid ID format received: ${id}`);
+      return res.status(400).json({ error: 'معرف المنتج غير صالح.' });
     }
 
     const product = await Product.findById(id).populate('category store');
+    
     if (!product) {
-      return res.status(404).json({ error: 'المنتج غير موجود في أرشيف فوراتو، ربما تم حذفه مسبقاً' });
+      console.warn(`⚠️ [CONTROLLER] Product NOT FOUND in DB for ID: ${id}`);
+      return res.status(404).json({ error: 'عذراً، هذا المقتنى لم يعد متوفراً في أرشيف فوراتو.' });
     }
+
+    console.log(`✅ [CONTROLLER] Product found successfully: ${product.name}`);
     res.json(product);
   } catch (error) {
-    console.error("Fetch Product Error:", error);
-    res.status(500).json({ error: 'حدث خطأ تقني أثناء جلب بيانات المقتنى' });
+    console.error("🔥 [CONTROLLER] CRITICAL ERROR in getProductById:", error);
+    res.status(500).json({ error: 'حدث خطأ غير متوقع أثناء استرداد بيانات المقتنى.' });
   }
 };
 
