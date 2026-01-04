@@ -287,7 +287,7 @@ export default function HomePage() {
       </section>
 
       {/* 8. ELITE FLOATING WHATSAPP (Pulse Rings Animation) */}
-      <div className="fixed bottom-8 left-10 z-[100]">
+      <div className="fixed bottom-5 left-5 z-[100]">
         <a
           href="https://wa.me/963930904315"
           target="_blank"
@@ -296,11 +296,11 @@ export default function HomePage() {
         >
           {/* Layered Pulse Rings - Advanced CSS/Tailwind Animation */}
           <div className="absolute inset-0 rounded-full bg-[#25D366] opacity-40 animate-ping" style={{ animationDuration: '3s' }} />
-          <div className="absolute inset-[-5px] rounded-full bg-[#25D366] opacity-20 animate-pulse scale-110" />
-          <div className="absolute inset-[-10px] rounded-full bg-[#25D366] opacity-5 animate-pulse scale-125" style={{ animationDelay: '1s' }} />
+          <div className="absolute inset-[-2px] rounded-full bg-[#25D366] opacity-20 animate-pulse " />
+          <div className="absolute inset-[-2px] rounded-full bg-[#25D366] opacity-5 animate-pulse" style={{ animationDelay: '1s' }} />
           
-          <div className="relative bg-[#25D366] text-white p-5 rounded-full shadow-[0_20px_40px_-10px_rgba(37,211,102,0.6)] hover:shadow-[0_25px_50px_-10px_rgba(37,211,102,0.8)] hover:scale-110 active:scale-95 transition-all duration-500 flex items-center justify-center border-2 border-white/20">
-            <MessageCircle size={32} fill="white" className="transition-transform group-hover:rotate-12" />
+          <div className="relative bg-[#25D366] text-white p-3 rounded-full shadow-[0_20px_40px_-10px_rgba(37,211,102,0.6)] hover:shadow-[0_25px_50px_-10px_rgba(37,211,102,0.8)] hover:scale-110 active:scale-95 transition-all duration-500 flex items-center justify-center border-2 border-white/20">
+            <MessageCircle size={20} fill="white" className="transition-transform group-hover:rotate-12" />
             
             {/* Elite Floating Tooltip */}
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 pointer-events-none">
