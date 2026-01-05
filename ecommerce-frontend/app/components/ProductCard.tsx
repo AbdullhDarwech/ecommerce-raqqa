@@ -1,14 +1,13 @@
-
 'use client';
 
 import React, { useState, useMemo } from "react";
-import Image from "next/image";
-import { Plus, Sparkles, Check, Star, ShoppingCart } from "lucide-react";
+// أزل import Image من next/image
+import { Plus, Sparkles, Check, Star } from "lucide-react";
 import { Product, Category } from "@/lib/types";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
-import { optimizeImage, getBlurPlaceholder } from "@/lib/api";
+import { optimizeImage } from "@/lib/api"; // أزل getBlurPlaceholder
 import ShieldText from "@/components/ShieldText";
 
 const MotionDiv = motion.div as any;
@@ -20,6 +19,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) => {
   const [isAdded, setIsAdded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const { addToCart } = useCart();
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -34,8 +34,32 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
   };
 
   const currentPrice = product.pricePurchase;
-  const mainImage = optimizeImage(product.images?.[0] || '', 400); 
   
+  // تحسين دالة الصور
+  const mainImage = useMemo(() => {
+    if (!product.images?.[0]) return '/images/placeholder.png';
+    
+    const imageUrl = product.images[0];
+    
+    // استخدم الصورة مباشرة بدون optimization إذا كانت من unsplash
+    if (imageUrl.includes('unsplash.com')) {
+      // أزل الـ query parameters الزائدة
+      const cleanUrl = imageUrl.split('?')[0];
+      return `${cleanUrl}?auto=format&fit=crop&w=800&q=80`;
+    }
+    
+    // إذا كانت من الـ backend
+    if (imageUrl.includes('render.com') || imageUrl.startsWith('/uploads/')) {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ecommerce-backend-2ssm.onrender.com';
+      if (imageUrl.startsWith('/')) {
+        return `${baseUrl}${imageUrl}`;
+      }
+      return imageUrl;
+    }
+    
+    return imageUrl || '/images/placeholder.png';
+  }, [product.images]);
+
   const categoryName = useMemo(() => {
     if (typeof product.category === 'object' && product.category !== null) {
       return (product.category as Category).name || 'مقتنيات فاخرة';
@@ -63,22 +87,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
     >
       <Link href={`/products/${product._id}`} className={`block h-full w-full relative ${isList ? 'flex flex-row' : 'flex flex-col'}`}>
         
-        {/* Image Section */}
+        {/* Image Section باستخدام img عادي */}
         <div className={`relative overflow-hidden bg-stone-50 shrink-0 transition-all duration-500 ${
           isList ? 'w-24 md:w-48 aspect-square md:aspect-auto' : 'w-full aspect-square'
         }`}>
-          <Image
-            src={mainImage}
+          {/* استخدم img بدلاً من Image */}
+          <img
+            src={imageError ? '/images/placeholder.png' : mainImage}
             alt={productName}
-            fill
-            placeholder="blur"
-            blurDataURL={getBlurPlaceholder()}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-110"
-            unoptimized={mainImage.startsWith('data:')}
+            className="w-full h-full object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-110"
+            onError={() => setImageError(true)}
+            loading="lazy"
           />
           
-          {/* Subtle Bottom Gradient on Hover only */}
+          {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
           {/* Elite Badges */}
@@ -91,7 +113,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
             )}
           </div>
 
-          {/* Quick Add Button - Floating Light Effect */}
+          {/* Quick Add Button */}
           {!isList && (
             <div className="absolute inset-x-0 bottom-0 z-30 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out hidden md:block">
                <button 
@@ -153,7 +175,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
                 </div>
              </div>
              
-             {/* Small Plus Button - Visible only on mobile or if needed as backup */}
+             {/* Small Plus Button */}
              <button 
                 onClick={handleAddToCart}
                 className={`transition-all flex items-center justify-center gap-2 relative z-40 md:hidden ${
@@ -187,8 +209,3 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
 };
 
 export default ProductCard;
-
-
-
-
- 

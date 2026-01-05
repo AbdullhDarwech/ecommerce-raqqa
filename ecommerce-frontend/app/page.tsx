@@ -72,7 +72,7 @@ export default function HomePage() {
       <section className="relative h-[85vh] flex items-center justify-center bg-emerald-950 overflow-hidden">
         <MotionDiv style={{ scale: heroScale, opacity: heroOpacity }} className="absolute inset-0 z-0">
           <Image 
-            src="https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=2000" 
+            src="https://images.unsplash.com/photo-1547996161-81dfa63595aa?auto=format&fit=crop&q=80&w=2000" 
             alt="Furato Excellence" 
             fill 
             priority
