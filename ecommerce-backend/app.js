@@ -39,7 +39,7 @@ app.use('/auth/', limiter); // تطبيق التحديد بشكل صارم عل�
 
 // 4. إعدادات CORS الصارمة
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // اسمح فقط لموقعك بالوصول
+  origin: process.env.PORT || 'http://localhost:3000', // اسمح فقط لموقعك بالوصول
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
