@@ -142,3 +142,36 @@ exports.updateProfile = async (req, res) => {
     res.status(500).json({ error: 'خطأ أثناء التحديث.' });
   }
 };
+// أضف هذه الدالة إذا لم تكن موجودة
+exports.refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      return res.status(400).json({ 
+        error: 'Refresh token مطلوب' 
+      });
+    }
+    
+    // تحقق من صحة refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+    
+    // أنشئ token جديد
+    const newToken = jwt.sign(
+      { userId: decoded.userId, email: decoded.email },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE || '1h' }
+    );
+    
+    res.json({
+      token: newToken,
+      expiresIn: 3600 // ثانية
+    });
+    
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    res.status(401).json({ 
+      error: 'Refresh token غير صالح أو منتهي الصلاحية' 
+    });
+  }
+};
