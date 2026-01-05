@@ -126,7 +126,7 @@ export default function HomePage() {
 
       {/* 3. BEST SELLERS SECTION */}
       <section className=" py-10 md:py-24 bg-white">
-         <div className="container rtl mx-auto px-6">
+         <div className="container  mx-auto px-6">
             <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
               <div className="space-y-3">
                 <span className="inline-flex items-center gap-2 px-4 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-[0.3em]">
@@ -226,7 +226,8 @@ export default function HomePage() {
                
                <div className="flex flex-col sm:flex-row gap-6 justify-center md:justify-start">
                  <a 
-                   href="https://wa.me/963930904315"
+                   href="https://wa.me/963930904315?text=مرحباً، أود الاستفسار عن بروتوكول الشراكة مع فوراتو."
+                    target="_blank"
                    className="px-12 py-6 bg-amber-500 text-emerald-950 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] hover:bg-amber-400 transition-all shadow-2xl flex items-center justify-center gap-4"
                  >
                    تواصل سيادي مباشر <MessageCircle size={20} fill="currentColor" />
