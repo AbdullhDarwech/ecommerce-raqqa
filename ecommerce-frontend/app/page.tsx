@@ -125,14 +125,14 @@ export default function HomePage() {
       </div>
 
       {/* 3. BEST SELLERS SECTION */}
-      <section className="py-24 bg-white">
-         <div className="container mx-auto px-6">
+      <section className=" py-10 md:py-24 bg-white">
+         <div className="container rtl mx-auto px-6">
             <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
               <div className="space-y-3">
                 <span className="inline-flex items-center gap-2 px-4 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-[0.3em]">
                   <Star size={12} fill="currentColor" /> Elite Selection
                 </span>
-                <h2 className="text-4xl md:text-6xl font-black text-emerald-950 tracking-tighter">الأكثر <span className="text-emerald-600 italic">مبيعاً</span></h2>
+                <h2 className="text-4xl md:text-6xl  font-black text-emerald-950 tracking-tighter">الأكثر <span className="text-emerald-600 italic">مبيعاً</span></h2>
               </div>
               <Link href="/products?sort=best_selling" className="text-xs font-black text-emerald-900/40 hover:text-emerald-600 uppercase tracking-widest border-b-2 border-transparent hover:border-emerald-600 pb-1 transition-all">تصفح القائمة الكاملة</Link>
             </div>
@@ -154,7 +154,7 @@ export default function HomePage() {
       </section>
 
       {/* 4. CURATED CATEGORIES */}
-      <section className="py-24 bg-stone-50/50">
+      <section className="py-10 md:py-24 bg-stone-50/50">
         <div className="container mx-auto px-6 mb-16 flex justify-between items-center">
           <div className="space-y-2">
              <span className="text-emerald-600 font-black text-[10px] uppercase tracking-[0.4em]">Curated Worlds</span>
@@ -170,7 +170,7 @@ export default function HomePage() {
           {loading ? (
             [1,2,3,4,5].map(i => <div key={i} className="shrink-0 w-[70vw] md:w-[25vw] aspect-[4/5] bg-stone-100 rounded-[3rem] animate-pulse" />)
           ) : categories.map((cat) => (
-            <MotionDiv key={cat._id} whileHover={{ scale: 0.98 }} className="shrink-0 w-[70vw] md:w-[25vw] aspect-[4/5] relative rounded-[3rem] overflow-hidden snap-center group shadow-2xl border border-emerald-50">
+            <MotionDiv key={cat._id} whileHover={{ scale: 0.98 }} className="shrink-0 w-[50vw] md:w-[25vw] aspect-[3.7/5] relative rounded-[3rem] overflow-hidden snap-center group shadow-2xl border border-emerald-50">
               <Link href={`/products?category=${cat._id}`} className="block w-full h-full">
                 <Image 
                   src={optimizeImage(cat.imageUrl, 600)} 
@@ -180,7 +180,7 @@ export default function HomePage() {
                   unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-950/20 to-transparent" />
-                <div className="absolute bottom-10 inset-x-8">
+                <div className="absolute bottom-0 md:bottom-10 inset-x-8">
                    <h3 className="text-white text-2xl font-black tracking-tight mb-3">{cat.name}</h3>
                    <span className="text-amber-400 text-[9px] font-black uppercase tracking-[0.3em] opacity-0 group-hover:opacity-100 transition-opacity">اكتشف المقتنيات</span>
                 </div>
@@ -191,7 +191,7 @@ export default function HomePage() {
       </section>
 
       {/* 5. NEW ARRIVALS */}
-      <section className="py-24">
+      <section className="py-10 md:py-24">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-6">
             <div className="space-y-4">
