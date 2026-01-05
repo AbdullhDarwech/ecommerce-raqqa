@@ -43,12 +43,22 @@ app.use('/auth/', limiter); // تطبيق التحديد بشكل صارم عل�
 //   optionsSuccessStatus: 200
 // };
 app.use(cors({
-  origin: '*', // ✅ السماح للجميع
+  origin: '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Shield-Mode',
+    'x-shield-mode',
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
 // app.use(cors(corsOptions));
+app.options('*', cors());
 
 app.use(express.json({ limit: '10kb' })); // تحديد حجم الطلب لمنع هجمات التحميل الزائد
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
