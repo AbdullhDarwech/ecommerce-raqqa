@@ -42,6 +42,12 @@ app.use('/auth/', limiter); // تطبيق التحديد بشكل صارم عل�
 //   origin: process.env.FRONTEND_URL || 'http://localhost:3000', // اسمح فقط لموقعك بالوصول
 //   optionsSuccessStatus: 200
 // };
+app.use(cors({
+  origin: '*', // ✅ السماح للجميع
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 // app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10kb' })); // تحديد حجم الطلب لمنع هجمات التحميل الزائد
