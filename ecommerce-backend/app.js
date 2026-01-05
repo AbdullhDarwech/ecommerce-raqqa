@@ -42,6 +42,21 @@ app.use('/auth/', limiter); // تطبيق التحديد بشكل صارم عل�
 //   origin: process.env.FRONTEND_URL || 'http://localhost:3000', // اسمح فقط لموقعك بالوصول
 //   optionsSuccessStatus: 200
 // };
+// في app.js - تحديث CORS options
+const corsOptions = {
+  origin: '*', // أو ضع الأصول المحددة
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Shield-Mode', // ✅ أضف هذا السطر
+    'x-shield-mode', // ✅ وحتى هذا للتأكد
+  ]
+};
+
+app.use(cors(corsOptions));
+
 app.use(cors({
   origin: '*',
   credentials: true,
@@ -105,6 +120,14 @@ app.get('/admin/stores', authenticate, authorizeAdmin, storeController.getAdminS
 app.post('/admin/stores', authenticate, authorizeAdmin, upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), storeController.createStore);
 app.put('/admin/stores/:id', authenticate, authorizeAdmin, upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), storeController.updateStore);
 app.delete('/admin/stores/:id', authenticate, authorizeAdmin, storeController.deleteStore);
+app.use('*', (req, res) => {
+  res.status(404).json({ 
+    error: 'Route not found',
+    url: req.originalUrl,
+    method: req.method,
+    availableRoutes: ['/', '/health', '/products', '/categories', '/auth/login']
+  });
+});
 
 app.use((req, res) => res.status(404).json({ error: 'المسار غير متاح.' }));
 
