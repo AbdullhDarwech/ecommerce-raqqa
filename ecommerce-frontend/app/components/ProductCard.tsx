@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
-import { Plus, Sparkles, Check, Star } from "lucide-react";
+import { Plus, Sparkles, Check, Star, ShoppingCart } from "lucide-react";
 import { Product, Category } from "@/lib/types";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -57,15 +57,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
       initial={{ opacity: 0, y: 15 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className={`group relative bg-white overflow-hidden transition-all duration-500 border border-emerald-50 hover:shadow-[0_15px_40px_-15px_rgba(6,78,59,0.1)] ${
-        isList ? 'rounded-[1.2rem] flex flex-row h-auto md:h-48' : 'rounded-[2rem] flex flex-col h-full'
+      className={`group relative bg-white overflow-hidden transition-all duration-500 border border-emerald-50 hover:shadow-[0_25px_50px_-12px_rgba(6,78,59,0.12)] ${
+        isList ? 'rounded-[1.2rem] flex flex-row h-auto md:h-48' : 'rounded-[1.5rem] md:rounded-[2.5rem] flex flex-col h-full'
       }`}
     >
       <Link href={`/products/${product._id}`} className={`block h-full w-full relative ${isList ? 'flex flex-row' : 'flex flex-col'}`}>
         
         {/* Image Section */}
         <div className={`relative overflow-hidden bg-stone-50 shrink-0 transition-all duration-500 ${
-          isList ? 'w-28 md:w-48 aspect-square md:aspect-auto' : 'w-full aspect-square'
+          isList ? 'w-24 md:w-48 aspect-square md:aspect-auto' : 'w-full aspect-square'
         }`}>
           <Image
             src={mainImage}
@@ -73,73 +73,112 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
             fill
             placeholder="blur"
             blurDataURL={getBlurPlaceholder()}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-110"
             unoptimized={mainImage.startsWith('data:')}
           />
-          <div className="absolute top-2 right-2 z-20">
+          
+          {/* Subtle Bottom Gradient on Hover only */}
+          <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+          {/* Elite Badges */}
+          <div className="absolute top-3 right-3 z-20 flex flex-col gap-2">
             {product.isBestSeller && (
-              <div className="bg-emerald-950/90 backdrop-blur-md text-amber-400 text-[7px] font-black px-2 py-1 rounded-full shadow-lg flex items-center gap-1 border border-amber-400/20 uppercase">
-                <Sparkles size={8} />
+              <div className="bg-emerald-950/90 backdrop-blur-md text-amber-400 text-[7px] font-black px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-amber-400/20 uppercase tracking-widest">
+                <Star size={10} fill="currentColor" />
                 <span>Elite</span>
               </div>
             )}
           </div>
+
+          {/* Quick Add Button - Floating Light Effect */}
+          {!isList && (
+            <div className="absolute inset-x-0 bottom-0 z-30 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out hidden md:block">
+               <button 
+                  onClick={handleAddToCart}
+                  className={`w-full py-3.5 rounded-2xl font-black text-[9px] uppercase tracking-[0.25em] shadow-2xl transition-all flex items-center justify-center gap-3 backdrop-blur-md border border-white/40 ${
+                    isAdded 
+                    ? 'bg-amber-500 text-white border-amber-400 shadow-amber-500/20' 
+                    : 'bg-emerald-600 text-white'
+                  }`}
+                >
+                  <AnimatePresence mode="wait">
+                    {isAdded ? (
+                      <MotionDiv key="check" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-2">
+                        <Check size={14} /> تم الحفظ
+                      </MotionDiv>
+                    ) : (
+                      <MotionDiv key="cart" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
+                        <Plus size={14} /> إضافة سريعة للسلة
+                      </MotionDiv>
+                    )}
+                  </AnimatePresence>
+               </button>
+            </div>
+          )}
         </div>
 
         {/* Content Section */}
-        <div className={`flex flex-col text-right bg-white flex-1 p-4 md:p-6 transition-all duration-500 ${
+        <div className={`flex flex-col text-right bg-white flex-1 p-4 md:p-7 transition-all duration-500 ${
           isList ? 'justify-center' : 'gap-1'
         }`}>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[8px] font-black text-emerald-600/60 uppercase tracking-[0.2em]">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[8px] md:text-[9px] font-black text-emerald-600/60 uppercase tracking-[0.25em]">
               <ShieldText text={categoryName} />
             </span>
-            <div className="flex text-amber-500">
-               <Star size={8} fill="currentColor" />
-               <Star size={8} fill="currentColor" />
-               <Star size={8} fill="currentColor" />
-               <Star size={8} fill="currentColor" />
-               <Star size={8} fill="currentColor" />
-            </div>
+            {!isList && (
+              <div className="flex text-amber-500">
+                 <Star size={10} fill="currentColor" />
+                 <Star size={10} fill="currentColor" />
+                 <Star size={10} fill="currentColor" />
+                 <Star size={10} fill="currentColor" />
+                 <Star size={10} fill="currentColor" />
+              </div>
+            )}
           </div>
 
-          {/* تم تعديل هذه الحاوية لضمان العرض السليم */}
-          <div className={`font-bold text-emerald-950 leading-tight group-hover:text-emerald-700 transition-colors mb-2 min-h-[2.5rem] ${
-            isList ? 'text-base md:text-lg line-clamp-1' : 'text-sm md:text-[15px] line-clamp-2'
+          <div className={`font-bold text-emerald-950 leading-tight group-hover:text-emerald-700 transition-colors mb-3 min-h-[2.5rem] md:min-h-[3rem] ${
+            isList ? 'text-sm md:text-xl line-clamp-1' : 'text-xs md:text-[17px] line-clamp-2'
           }`}>
             <ShieldText text={productName} className="block" />
           </div>
 
-          <div className={`flex items-end justify-between ${isList ? 'mt-auto' : 'mt-auto pt-3 border-t border-emerald-50/50'}`}>
+          <div className={`flex items-end justify-between ${isList ? 'mt-auto' : 'mt-auto pt-3 md:pt-4 border-t border-emerald-50/50'}`}>
              <div className="flex flex-col items-start text-right">
-                <span className="text-[8px] font-bold text-stone-400 uppercase tracking-tight">قيمة المقتنى</span>
-                <div className="flex items-center gap-1">
-                  <span className={`${isList ? 'text-xl md:text-2xl' : 'text-lg'} font-black text-emerald-950 tracking-tight`}>
+                <span className="text-[8px] md:text-[9px] font-bold text-stone-400 uppercase tracking-tight mb-0.5">القيمة السيادية</span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`${isList ? 'text-xl md:text-3xl' : 'text-sm md:text-2xl'} font-black text-emerald-950 tracking-tighter`}>
                     ${currentPrice.toLocaleString()}
                   </span>
                 </div>
              </div>
              
+             {/* Small Plus Button - Visible only on mobile or if needed as backup */}
              <button 
                 onClick={handleAddToCart}
-                className={`transition-all flex items-center justify-center gap-2 ${
-                  isList 
-                  ? 'px-6 h-10 rounded-lg bg-emerald-950 text-white hover:bg-emerald-800 text-[9px] font-black uppercase tracking-widest shadow-lg' 
-                  : `w-9 h-9 rounded-lg ${isAdded ? 'bg-amber-500 text-white shadow-amber-200 shadow-md' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white'}`
-                }`}
+                className={`transition-all flex items-center justify-center gap-2 relative z-40 md:hidden ${
+                  isAdded ? 'bg-amber-500 text-white' : 'bg-emerald-50 text-emerald-600'
+                } w-10 h-10 rounded-xl shadow-sm`}
               >
                 <AnimatePresence mode="wait">
                   {isAdded ? (
-                    <motion.div key="v" initial={{ scale: 0.5 }} animate={{ scale: 1 }}><Check size={14} /></motion.div>
+                    <MotionDiv key="v2" initial={{ scale: 0.5 }} animate={{ scale: 1 }}><Check size={18} /></MotionDiv>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <Plus size={14} />
-                      {isList && <span className="hidden md:inline">اقتناء الآن</span>}
-                    </div>
+                    <Plus size={18} />
                   )}
                 </AnimatePresence>
              </button>
+
+             {/* Action for List Layout */}
+             {isList && (
+               <button 
+                 onClick={handleAddToCart}
+                 className="px-6 py-3 bg-emerald-950 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hidden md:flex items-center gap-2 hover:bg-emerald-800 transition-colors shadow-lg shadow-emerald-950/10"
+               >
+                 {isAdded ? <Check size={14} /> : <Plus size={14} />}
+                 {isAdded ? 'تمت الإضافة' : 'اقتناء الآن'}
+               </button>
+             )}
           </div>
         </div>
       </Link>
@@ -148,3 +187,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
 };
 
 export default ProductCard;
+
+
+
+
+ 
