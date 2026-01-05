@@ -2,11 +2,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-// Using next/router as a fallback
-// import { useRouter } from 'next/router';
+import { useParams } from 'next/navigation';
 import api from '@/lib/api';
-import { Product } from '@/lib/types';
+import { Product, Category } from '@/lib/types';
 import ProductDetails from '@/components/ProductDetails';
 import ProductCard from '@/components/ProductCard';
 import { Loader2 } from 'lucide-react';
@@ -26,10 +24,17 @@ export default function ProductPage() {
         const { data: productData } = await api.get(`/products/${id}`);
         setProduct(productData);
 
+        // الإصلاح هنا: استخدام المعرف (ID) بدلاً من الاسم للبحث عن المنتجات المتعلقة
         if (productData.category) {
-            const catName = typeof productData.category === 'object' ? productData.category.name : productData.category;
-            const { data: related } = await api.get(`/products?category=${catName}&limit=4`);
-            setRelatedProducts(related.data?.filter((p: Product) => p._id !== id) || []);
+            const catId = typeof productData.category === 'object' 
+              ? (productData.category as Category)._id 
+              : productData.category;
+              
+            const { data: related } = await api.get(`/products?category=${catId}&limit=5`);
+            
+            // تصفية المنتج الحالي من القائمة
+            const filtered = (related.data || []).filter((p: Product) => p._id !== id);
+            setRelatedProducts(filtered.slice(0, 4));
         }
       } catch (error) {
         console.error("Error fetching product details:", error);
@@ -59,21 +64,21 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-14">
+    <div className="container mx-auto px-4 py-8">
       <ProductDetails product={product} />
 
-      {relatedProducts.length > 0 && (
+      {/* {relatedProducts.length > 0 && (
         <div className="mt-20 border-t pt-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-8">منتجات مشابهة قد تعجبك</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {relatedProducts.map(p => (
-                    <div key={p._id} className="h-96">
+                    <div key={p._id} className="h-full">
                         <ProductCard product={p} />
                     </div>
                 ))}
             </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

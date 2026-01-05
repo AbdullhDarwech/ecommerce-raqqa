@@ -184,7 +184,7 @@ export default function ProductDetails({ product }: { product: Product }) {
                <button
                  onClick={handleAddToCart}
                  disabled={product.stockQuantity < 1 || isAdding}
-                 className={`flex-1 h-16 rounded-2xl font-black text-sm flex items-center justify-center gap-4 transition-all uppercase tracking-[0.2em] shadow-xl ${
+                 className={`flex-1 h-16 p-4 rounded-2xl font-black text-sm flex items-center justify-center gap-4 transition-all uppercase tracking-[0.2em] shadow-xl ${
                    product.stockQuantity < 1 
                    ? 'bg-stone-100 text-stone-300 cursor-not-allowed shadow-none'
                    : 'bg-emerald-950 text-white hover:bg-emerald-800 hover:shadow-emerald-900/20 active:scale-95'

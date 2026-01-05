@@ -41,8 +41,8 @@ export default function CategoriesSidebar({ selectedCategory, onSelect }: Catego
         onClick={() => onSelect({ category: '', subcategory: null })}
         className={`w-full text-right px-6 py-4 rounded-2xl text-xs font-black transition-all flex items-center justify-between group ${
           !selectedCategory 
-            ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20' 
-            : 'bg-slate-50 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'
+            ? 'bg-emerald-900 text-white shadow-xl shadow-slate-900/20' 
+            : 'bg-slate-50 text-slate-500 hover:bg-emerald-50 hover:text-emerald-600'
         }`}
       >
         <div className="flex items-center gap-3 uppercase tracking-widest">

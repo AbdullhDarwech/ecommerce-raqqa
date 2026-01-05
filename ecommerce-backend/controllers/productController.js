@@ -5,13 +5,25 @@ const mongoose = require('mongoose');
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 12, search, category, subcategory, store, sort, minPrice, maxPrice } = req.query;
+    const { page = 1, limit = 12, search, category, subcategory, store, sort, minPrice, maxPrice, isBestSeller } = req.query;
     const query = {};
 
     if (search) query.name = { $regex: search, $options: 'i' };
-    if (category) query.category = category;
+    
+    // التحقق من أن المعرف المرسل هو ObjectId صالح قبل استخدامه
+    if (category && mongoose.Types.ObjectId.isValid(category)) {
+      query.category = category;
+    }
+    
     if (subcategory) query.subcategory = subcategory;
-    if (store) query.store = store;
+    
+    if (store && mongoose.Types.ObjectId.isValid(store)) {
+      query.store = store;
+    }
+    
+    if (isBestSeller === 'true') {
+      query.isBestSeller = true;
+    }
     
     if (minPrice || maxPrice) {
       query.pricePurchase = {};
@@ -39,6 +51,7 @@ exports.getAllProducts = async (req, res) => {
       totalItems: count
     });
   } catch (error) {
+    console.error("Get All Products Error:", error);
     res.status(500).json({ error: 'فشل في جلب المنتجات' });
   }
 };
@@ -46,24 +59,20 @@ exports.getAllProducts = async (req, res) => {
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(`🔎 [CONTROLLER] Attempting to find product with ID: ${id}`);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      console.warn(`❌ [CONTROLLER] Invalid ID format received: ${id}`);
       return res.status(400).json({ error: 'معرف المنتج غير صالح.' });
     }
 
     const product = await Product.findById(id).populate('category store');
     
     if (!product) {
-      console.warn(`⚠️ [CONTROLLER] Product NOT FOUND in DB for ID: ${id}`);
-      return res.status(404).json({ error: 'عذراً، هذا المقتنى لم يعد متوفراً في أرشيف فوراتو.' });
+      return res.status(404).json({ error: 'عذراً، هذا المقتنى لم يعد متوفراً.' });
     }
 
-    console.log(`✅ [CONTROLLER] Product found successfully: ${product.name}`);
     res.json(product);
   } catch (error) {
-    console.error("🔥 [CONTROLLER] CRITICAL ERROR in getProductById:", error);
+    console.error("Get Product By ID Error:", error);
     res.status(500).json({ error: 'حدث خطأ غير متوقع أثناء استرداد بيانات المقتنى.' });
   }
 };

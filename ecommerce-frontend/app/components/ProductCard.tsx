@@ -1,14 +1,15 @@
 
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Image from "next/image";
-import { Plus, Sparkles, Check, ShoppingBag, Star } from "lucide-react";
-import { Product } from "@/lib/types";
+import { Plus, Sparkles, Check, Star } from "lucide-react";
+import { Product, Category } from "@/lib/types";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { optimizeImage, getBlurPlaceholder } from "@/lib/api";
+import ShieldText from "@/components/ShieldText";
 
 const MotionDiv = motion.div as any;
 
@@ -34,7 +35,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
 
   const currentPrice = product.pricePurchase;
   const mainImage = optimizeImage(product.images?.[0] || '', 400); 
-  const categoryName = typeof product.category === 'object' ? product.category.name : 'مقتنيات فاخرة';
+  
+  const categoryName = useMemo(() => {
+    if (typeof product.category === 'object' && product.category !== null) {
+      return (product.category as Category).name || 'مقتنيات فاخرة';
+    }
+    return typeof product.category === 'string' ? product.category : 'مقتنيات فاخرة';
+  }, [product.category]);
+
+  const productName = useMemo(() => {
+    if (!product.name) return 'مقتنى سيادي';
+    if (Array.isArray(product.name)) return product.name.join(' ');
+    return String(product.name);
+  }, [product.name]);
 
   const isList = layout === 'list';
 
@@ -50,20 +63,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
     >
       <Link href={`/products/${product._id}`} className={`block h-full w-full relative ${isList ? 'flex flex-row' : 'flex flex-col'}`}>
         
+        {/* Image Section */}
         <div className={`relative overflow-hidden bg-stone-50 shrink-0 transition-all duration-500 ${
           isList ? 'w-28 md:w-48 aspect-square md:aspect-auto' : 'w-full aspect-square'
         }`}>
           <Image
             src={mainImage}
-            alt={product.name}
+            alt={productName}
             fill
             placeholder="blur"
             blurDataURL={getBlurPlaceholder()}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-            loading="lazy"
+            unoptimized={mainImage.startsWith('data:')}
           />
-
           <div className="absolute top-2 right-2 z-20">
             {product.isBestSeller && (
               <div className="bg-emerald-950/90 backdrop-blur-md text-amber-400 text-[7px] font-black px-2 py-1 rounded-full shadow-lg flex items-center gap-1 border border-amber-400/20 uppercase">
@@ -72,28 +85,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
               </div>
             )}
           </div>
-
-          {!isList && (
-            <div className="absolute inset-x-3 bottom-3 z-30 opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out hidden md:block">
-              <button 
-                onClick={handleAddToCart}
-                disabled={product.stockQuantity < 1}
-                className={`w-full py-3 rounded-xl flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-widest transition-all shadow-xl ${
-                  isAdded ? 'bg-amber-500 text-white' : 'bg-emerald-950 text-white hover:bg-emerald-800'
-                }`}
-              >
-                <ShoppingBag size={12} /> {isAdded ? 'تمت الإضافة' : 'إضافة للسلة'}
-              </button>
-            </div>
-          )}
         </div>
 
+        {/* Content Section */}
         <div className={`flex flex-col text-right bg-white flex-1 p-4 md:p-6 transition-all duration-500 ${
-          isList ? 'justify-center' : 'gap-2'
+          isList ? 'justify-center' : 'gap-1'
         }`}>
-          <div className="flex items-center justify-between mb-0.5">
+          <div className="flex items-center justify-between mb-1">
             <span className="text-[8px] font-black text-emerald-600/60 uppercase tracking-[0.2em]">
-              {categoryName}
+              <ShieldText text={categoryName} />
             </span>
             <div className="flex text-amber-500">
                <Star size={8} fill="currentColor" />
@@ -104,14 +104,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) =
             </div>
           </div>
 
-          <h3 className={`font-bold text-emerald-950 leading-tight group-hover:text-emerald-700 transition-colors ${
-            isList ? 'text-base md:text-lg mb-1 line-clamp-1' : 'text-sm md:text-[15px] line-clamp-2 min-h-[2.4rem]'
+          {/* تم تعديل هذه الحاوية لضمان العرض السليم */}
+          <div className={`font-bold text-emerald-950 leading-tight group-hover:text-emerald-700 transition-colors mb-2 min-h-[2.5rem] ${
+            isList ? 'text-base md:text-lg line-clamp-1' : 'text-sm md:text-[15px] line-clamp-2'
           }`}>
-            {product.name}
-          </h3>
+            <ShieldText text={productName} className="block" />
+          </div>
 
           <div className={`flex items-end justify-between ${isList ? 'mt-auto' : 'mt-auto pt-3 border-t border-emerald-50/50'}`}>
-             <div className="flex flex-col items-start">
+             <div className="flex flex-col items-start text-right">
                 <span className="text-[8px] font-bold text-stone-400 uppercase tracking-tight">قيمة المقتنى</span>
                 <div className="flex items-center gap-1">
                   <span className={`${isList ? 'text-xl md:text-2xl' : 'text-lg'} font-black text-emerald-950 tracking-tight`}>

@@ -5,10 +5,11 @@ import { CartProvider } from '@/context/CartContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import './globals.css';
 
 export const metadata = {
-  title: 'Furato Elite - تجربة التسوق السيادية',
+  title: 'Furato Emerald Elite - تجربة التسوق السيادية',
   description: 'منصتكم الرائدة لتسوق حصري يجمع بين الفخامة الزمردية والتقنية العالمية في قلب الرقة.',
   icons: {
     icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2225%22 fill=%22%2310b981%22/><text x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2260%22>F</text></svg>',
@@ -51,6 +52,12 @@ export default function RootLayout({
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
+    /* إزاحة الواتساب ليتناسب مع البار الجديد في الموبايل */
+    @media (max-width: 1024px) {
+      .floating-whatsapp {
+        bottom: 100px !important;
+      }
+    }
   `;
 
   return (
@@ -64,7 +71,7 @@ export default function RootLayout({
         <style dangerouslySetInnerHTML={{ __html: inlineStyles }} />
       </head>
 
-      <body className="bg-white text-emerald-950 custom-scrollbar">
+      <body className="bg-white text-emerald-950 custom-scrollbar pb-24 lg:pb-0">
         <AuthProvider>
           <CartProvider>
             <Header />
@@ -72,6 +79,7 @@ export default function RootLayout({
             <main className="min-h-screen">
               {children}
             </main>
+            <MobileBottomNav />
             <Footer />
           </CartProvider>
         </AuthProvider>

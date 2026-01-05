@@ -24,6 +24,26 @@ export default function CartDrawer() {
     }
   };
 
+  // دالة مساعدة لمعالجة مسارات الصور
+  const getImageUrl = (imagePath: string | undefined) => {
+    if (!imagePath) {
+      return '/images/placeholder.png'; // تأكد من وجود هذا الملف في public/images/
+    }
+    
+    // إذا كان الرابط يحتوي على نطاق كامل
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    
+    // إذا كان الرابط يبدأ بـ / فهو مسار نسبي
+    if (imagePath.startsWith('/')) {
+      return imagePath;
+    }
+    
+    // إذا كان مجرد اسم ملف، أضفه إلى مجلد الصور
+    return `/images/products/${imagePath}`;
+  };
+
   return (
     <AnimatePresence>
       {isCartOpen && (
@@ -57,6 +77,7 @@ export default function CartDrawer() {
               <button 
                 onClick={closeCart}
                 className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                aria-label="إغلاق سلة المشتريات"
               >
                 <X size={20} />
               </button>
@@ -67,48 +88,72 @@ export default function CartDrawer() {
               {cartItems.length > 0 ? (
                 cartItems.map((item) => {
                   const price = item.orderType === 'rental' ? item.product.priceRental : item.product.pricePurchase;
+                  const imageUrl = getImageUrl(item.product.images?.[0]);
+                  
                   return (
-                    <div key={`${item.product._id}-${item.orderType}`} className="flex gap-3 border p-3 rounded-xl hover:shadow-md transition-shadow relative bg-white">
+                    <div 
+                      key={`${item.product._id}-${item.orderType}`} 
+                      className="flex gap-3 border p-3 rounded-xl hover:shadow-md transition-shadow relative bg-white"
+                    >
                       <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0 border border-gray-100">
                         <Image 
-                          src={item.product.images?.[0] || '/placeholder.png'} 
-                          alt={item.product.name} 
-                          fill 
-                          loading='lazy'
+                          src={imageUrl}
+                          alt={item.product.name || 'صورة المنتج'}
+                          fill
+                          sizes="80px"
+                          loading="lazy"
                           className="object-cover"
+                          onError={(e) => {
+                            // في حال فشل تحميل الصورة، استخدم صورة افتراضية
+                            e.currentTarget.src = '/images/placeholder.png';
+                          }}
                         />
                       </div>
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
                           <div className="flex justify-between items-start">
-                             <h3 className="font-semibold text-gray-800 line-clamp-1 text-sm">{item.product.name}</h3>
-                             <button 
-                                onClick={() => removeFromCart(item.product._id, item.orderType)}
-                                className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                             >
-                                <Trash2 size={16} />
-                             </button>
+                            <h3 className="font-semibold text-gray-800 line-clamp-1 text-sm">
+                              {item.product.name}
+                            </h3>
+                            <button 
+                              onClick={() => removeFromCart(item.product._id, item.orderType)}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                              aria-label={`حذف ${item.product.name} من السلة`}
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
-                             <p className="text-emerald-600 font-bold text-sm">${price}</p>
-                             {item.orderType === 'rental' && <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">تأجير</span>}
+                            <p className="text-emerald-600 font-bold text-sm">
+                              ${price?.toLocaleString() || '0'}
+                            </p>
+                            {item.orderType === 'rental' && (
+                              <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">
+                                تأجير
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-2 border rounded-lg px-1 bg-gray-50 h-8">
-                             <button 
-                                onClick={() => updateQuantity(item.product._id, item.orderType, item.quantity - 1)}
-                                className="w-6 h-full flex items-center justify-center text-gray-500 hover:text-emerald-600"
-                             >
-                                <Minus size={14} />
-                             </button>
-                             <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
-                             <button 
-                                onClick={() => updateQuantity(item.product._id, item.orderType, item.quantity + 1)}
-                                className="w-6 h-full flex items-center justify-center text-gray-500 hover:text-emerald-600"
-                             >
-                                <Plus size={14} />
-                             </button>
+                            <button 
+                              onClick={() => updateQuantity(item.product._id, item.orderType, Math.max(1, item.quantity - 1))}
+                              className="w-6 h-full flex items-center justify-center text-gray-500 hover:text-emerald-600 disabled:opacity-50"
+                              disabled={item.quantity <= 1}
+                              aria-label="تقليل الكمية"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="text-xs font-bold w-4 text-center">
+                              {item.quantity}
+                            </span>
+                            <button 
+                              onClick={() => updateQuantity(item.product._id, item.orderType, item.quantity + 1)}
+                              className="w-6 h-full flex items-center justify-center text-gray-500 hover:text-emerald-600"
+                              aria-label="زيادة الكمية"
+                            >
+                              <Plus size={14} />
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -118,10 +163,13 @@ export default function CartDrawer() {
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
                   <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-                     <ShoppingBag size={40} className="text-gray-300" />
+                    <ShoppingBag size={40} className="text-gray-300" />
                   </div>
                   <p className="text-gray-500">سلتك فارغة حالياً</p>
-                  <button onClick={closeCart} className="text-emerald-600 font-bold hover:underline">
+                  <button 
+                    onClick={closeCart} 
+                    className="text-emerald-600 font-bold hover:underline"
+                  >
                     تصفح المنتجات
                   </button>
                 </div>
@@ -133,16 +181,19 @@ export default function CartDrawer() {
               <div className="p-5 border-t bg-gray-50 safe-area-bottom pb-8 sm:pb-5">
                 <div className="flex justify-between items-center mb-4 text-lg font-bold">
                   <span>المجموع:</span>
-                  <span className="text-emerald-600">${cartTotal.toLocaleString()}</span>
+                  <span className="text-emerald-600">
+                    ${cartTotal.toLocaleString()}
+                  </span>
                 </div>
                 <div className="space-y-3">
                   <button 
                     onClick={handleCheckout}
                     className={`block w-full text-white text-center py-3.5 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
                       user 
-                        ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20" 
-                        : "bg-gray-800 hover:bg-gray-900 shadow-gray-500/20"
+                        ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20 active:scale-95" 
+                        : "bg-gray-800 hover:bg-gray-900 shadow-gray-500/20 active:scale-95"
                     }`}
+                    aria-label={user ? "إتمام الطلب" : "تسجيل الدخول لإتمام الطلب"}
                   >
                     {user ? (
                       "إتمام الطلب"
@@ -156,7 +207,8 @@ export default function CartDrawer() {
                   <Link 
                     href="/cart"
                     onClick={closeCart}
-                    className="block w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-center py-3.5 rounded-xl font-bold transition-all"
+                    className="block w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-center py-3.5 rounded-xl font-bold transition-all active:scale-95"
+                    aria-label="عرض السلة الكاملة"
                   >
                     عرض السلة الكاملة
                   </Link>
