@@ -23,6 +23,11 @@ export default function CreateProduct() {
     discountPercentage: 0,
     isBestSeller: false,
   });
+  
+  // إضافة حالة للخصائص
+  const [properties, setProperties] = useState<Array<{key: string, value: string}>>([
+    { key: '', value: '' }
+  ]);
 
   // تحميل البيانات الأساسية
   useEffect(() => {
@@ -57,6 +62,25 @@ export default function CreateProduct() {
     setNewImages(arr);
   };
 
+  // معالجة الخصائص
+  const handlePropertyChange = (index: number, field: 'key' | 'value', newValue: string) => {
+    const updatedProperties = [...properties];
+    updatedProperties[index][field] = newValue;
+    setProperties(updatedProperties);
+  };
+
+  const addProperty = () => {
+    setProperties([...properties, { key: '', value: '' }]);
+  };
+
+  const removeProperty = (index: number) => {
+    if (properties.length > 1) {
+      const updatedProperties = [...properties];
+      updatedProperties.splice(index, 1);
+      setProperties(updatedProperties);
+    }
+  };
+
   const handleSave = async () => {
     const formData = new FormData();
 
@@ -70,6 +94,13 @@ export default function CreateProduct() {
     formData.append('stockQuantity', product.stockQuantity.toString());
     formData.append('discountPercentage', product.discountPercentage.toString());
     formData.append('isBestSeller', product.isBestSeller.toString());
+
+    // إضافة الخصائص إلى الفورم داتا
+    // فلتر الخصائص الفارغة وإرسالها كـ JSON
+    const filteredProperties = properties.filter(p => p.key.trim() !== '' && p.value.trim() !== '');
+    if (filteredProperties.length > 0) {
+      formData.append('properties', JSON.stringify(filteredProperties));
+    }
 
     // صور جديدة
     newImages.forEach((file) => formData.append('images', file));
@@ -90,129 +121,239 @@ export default function CreateProduct() {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4">إنشاء منتج جديد</h1>
+      <h1 className="text-3xl font-bold mb-6">إنشاء منتج جديد</h1>
 
       {/* الاسم */}
-      <label className="font-semibold">اسم المنتج</label>
-      <input
-        className="border p-2 w-full mb-4"
-        value={product.name}
-        onChange={(e) => setProduct({ ...product, name: e.target.value })}
-        required
-      />
+      <div className="mb-4">
+        <label className="font-semibold block mb-2">اسم المنتج</label>
+        <input
+          className="border p-2 w-full rounded"
+          value={product.name}
+          onChange={(e) => setProduct({ ...product, name: e.target.value })}
+          required
+        />
+      </div>
 
       {/* وصف */}
-      <label className="font-semibold">الوصف</label>
-      <textarea
-        className="border p-2 w-full mb-4"
-        value={product.description}
-        onChange={(e) => setProduct({ ...product, description: e.target.value })}
-      />
+      <div className="mb-4">
+        <label className="font-semibold block mb-2">الوصف</label>
+        <textarea
+          className="border p-2 w-full rounded"
+          value={product.description}
+          onChange={(e) => setProduct({ ...product, description: e.target.value })}
+          rows={3}
+        />
+      </div>
 
       {/* الفئة */}
-      <label className="font-semibold">الفئة</label>
-      <select
-        className="border p-2 w-full mb-4"
-        value={product.category}
-        onChange={(e) => setProduct({ ...product, category: e.target.value })}
-        required
-      >
-        <option value="">اختر الفئة</option>
-        {categories.map((cat: any) => (
-          <option key={cat._id} value={cat._id}>{cat.name}</option>
-        ))}
-      </select>
+      <div className="mb-4">
+        <label className="font-semibold block mb-2">الفئة</label>
+        <select
+          className="border p-2 w-full rounded"
+          value={product.category}
+          onChange={(e) => setProduct({ ...product, category: e.target.value })}
+          required
+        >
+          <option value="">اختر الفئة</option>
+          {categories.map((cat: any) => (
+            <option key={cat._id} value={cat._id}>{cat.name}</option>
+          ))}
+        </select>
+      </div>
 
       {/* الفئة الفرعية */}
-      <label className="font-semibold">الفئة الفرعية</label>
-      <input
-        className="border p-2 w-full mb-4"
-        value={product.subcategory}
-        onChange={(e) => setProduct({ ...product, subcategory: e.target.value })}
-      />
+      <div className="mb-4">
+        <label className="font-semibold block mb-2">الفئة الفرعية</label>
+        <input
+          className="border p-2 w-full rounded"
+          value={product.subcategory}
+          onChange={(e) => setProduct({ ...product, subcategory: e.target.value })}
+        />
+      </div>
 
       {/* الماركة */}
-      <label className="font-semibold">الماركة</label>
-      <select
-        className="border p-2 w-full mb-4"
-        value={product.brand}
-        onChange={(e) => setProduct({ ...product, brand: e.target.value })}
-      >
-        <option value="">اختر الماركة (اختياري)</option>
-        {brands.map((b: any) => (
-          <option key={b._id} value={b.name}>{b.name}</option>
-        ))}
-      </select>
+      <div className="mb-4">
+        <label className="font-semibold block mb-2">الماركة</label>
+        <select
+          className="border p-2 w-full rounded"
+          value={product.brand}
+          onChange={(e) => setProduct({ ...product, brand: e.target.value })}
+        >
+          <option value="">اختر الماركة (اختياري)</option>
+          {brands.map((b: any) => (
+            <option key={b._id} value={b.name}>{b.name}</option>
+          ))}
+        </select>
+      </div>
 
       {/* سعر الشراء */}
-      <label className="font-semibold">سعر الشراء</label>
-      <input
-        type="number"
-        className="border p-2 w-full mb-4"
-        value={product.pricePurchase}
-        onChange={(e) => setProduct({ ...product, pricePurchase: Number(e.target.value) })}
-      />
+      <div className="mb-4">
+        <label className="font-semibold block mb-2">سعر الشراء</label>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          className="border p-2 w-full rounded"
+          value={product.pricePurchase}
+          onChange={(e) => setProduct({ ...product, pricePurchase: Number(e.target.value) })}
+        />
+      </div>
 
       {/* سعر الإيجار */}
-      <label className="font-semibold">سعر الإيجار</label>
-      <input
-        type="number"
-        className="border p-2 w-full mb-4"
-        value={product.priceRental}
-        onChange={(e) => setProduct({ ...product, priceRental: Number(e.target.value) })}
-      />
+      <div className="mb-4">
+        <label className="font-semibold block mb-2">سعر الإيجار</label>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          className="border p-2 w-full rounded"
+          value={product.priceRental}
+          onChange={(e) => setProduct({ ...product, priceRental: Number(e.target.value) })}
+        />
+      </div>
 
       {/* كمية المخزون */}
-      <label className="font-semibold">كمية المخزون</label>
-      <input
-        type="number"
-        className="border p-2 w-full mb-4"
-        value={product.stockQuantity}
-        onChange={(e) => setProduct({ ...product, stockQuantity: Number(e.target.value) })}
-      />
+      <div className="mb-4">
+        <label className="font-semibold block mb-2">كمية المخزون</label>
+        <input
+          type="number"
+          min="0"
+          className="border p-2 w-full rounded"
+          value={product.stockQuantity}
+          onChange={(e) => setProduct({ ...product, stockQuantity: Number(e.target.value) })}
+        />
+      </div>
 
       {/* نسبة الخصم */}
-      <label className="font-semibold">نسبة الخصم (%)</label>
-      <input
-        type="number"
-        className="border p-2 w-full mb-4"
-        value={product.discountPercentage}
-        onChange={(e) => setProduct({ ...product, discountPercentage: Number(e.target.value) })}
-      />
+      <div className="mb-4">
+        <label className="font-semibold block mb-2">نسبة الخصم (%)</label>
+        <input
+          type="number"
+          min="0"
+          max="100"
+          className="border p-2 w-full rounded"
+          value={product.discountPercentage}
+          onChange={(e) => setProduct({ ...product, discountPercentage: Number(e.target.value) })}
+        />
+      </div>
 
       {/* أفضل بائع */}
-      <label className="font-semibold">أفضل بائع</label>
-      <input
-        type="checkbox"
-        className="mb-4"
-        checked={product.isBestSeller}
-        onChange={(e) => setProduct({ ...product, isBestSeller: e.target.checked })}
-      />
+      <div className="mb-6">
+        <label className="font-semibold inline-flex items-center">
+          <input
+            type="checkbox"
+            className="ml-2"
+            checked={product.isBestSeller}
+            onChange={(e) => setProduct({ ...product, isBestSeller: e.target.checked })}
+          />
+          أفضل بائع
+        </label>
+      </div>
 
-      {/* رفع صور جديدة */}
-      <label className="font-semibold">إضافة صور</label>
-      <input type="file" multiple className="border p-2 w-full mb-4" onChange={handleImageUpload} />
-
-      {/* معاينة الصور الجديدة */}
-      {newImages.length > 0 && (
-        <div className="flex gap-2 mb-4 flex-wrap">
-          {newImages.map((file, i) => (
-            <div key={i} className="relative">
-              <img src={URL.createObjectURL(file)} className="w-24 h-24 rounded object-cover border" />
-              <button
-                onClick={() => removeLocalImage(i)}
-                className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded"
-              >
-                X
-              </button>
+      {/* خصائص المنتج */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-3">
+          <label className="font-semibold text-lg">خصائص المنتج</label>
+          <button
+            type="button"
+            onClick={addProperty}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            + إضافة خاصية
+          </button>
+        </div>
+        
+        <div className="space-y-3">
+          {properties.map((prop, index) => (
+            <div key={index} className="flex gap-3 items-center">
+              <div className="flex-1">
+                <label className="text-sm text-gray-600">المفتاح (مثال: اللون، الحجم)</label>
+                <input
+                  type="text"
+                  className="border p-2 w-full rounded"
+                  value={prop.key}
+                  onChange={(e) => handlePropertyChange(index, 'key', e.target.value)}
+                  placeholder="مثال: اللون"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-sm text-gray-600">القيمة (مثال: أحمر، كبير)</label>
+                <input
+                  type="text"
+                  className="border p-2 w-full rounded"
+                  value={prop.value}
+                  onChange={(e) => handlePropertyChange(index, 'value', e.target.value)}
+                  placeholder="مثال: أحمر"
+                />
+              </div>
+              {properties.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeProperty(index)}
+                  className="bg-red-500 text-white p-2 rounded hover:bg-red-600 mt-5"
+                  title="حذف"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           ))}
         </div>
+      </div>
+
+      {/* رفع صور جديدة */}
+      <div className="mb-6">
+        <label className="font-semibold block mb-2">إضافة صور</label>
+        <input 
+          type="file" 
+          multiple 
+          accept="image/*"
+          className="border p-2 w-full rounded" 
+          onChange={handleImageUpload} 
+        />
+        <p className="text-sm text-gray-500 mt-1">يمكنك اختيار أكثر من صورة</p>
+      </div>
+
+      {/* معاينة الصور الجديدة */}
+      {newImages.length > 0 && (
+        <div className="mb-6">
+          <label className="font-semibold block mb-2">معاينة الصور</label>
+          <div className="flex gap-3 flex-wrap">
+            {newImages.map((file, i) => (
+              <div key={i} className="relative">
+                <img 
+                  src={URL.createObjectURL(file)} 
+                  className="w-24 h-24 rounded object-cover border" 
+                  alt="معاينة الصورة"
+                />
+                <button
+                  onClick={() => removeLocalImage(i)}
+                  className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-red-700"
+                  title="حذف الصورة"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
-      <button onClick={handleSave} className="bg-green-600 text-white px-6 py-3 rounded">
-        إنشاء المنتج
-      </button>
+      {/* زر الإنشاء */}
+      <div className="flex gap-3">
+        <button 
+          onClick={() => router.back()} 
+          className="bg-gray-300 text-gray-800 px-6 py-3 rounded hover:bg-gray-400"
+        >
+          رجوع
+        </button>
+        <button 
+          onClick={handleSave} 
+          className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 flex-1"
+        >
+          إنشاء المنتج
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, ChangeEvent } from 'react';
@@ -32,7 +31,8 @@ export default function AddProductPage() {
     discountPercentage: '',
     isBestSeller: false,
     images: [] as File[],
-    store: ''
+    store: '',
+    properties: [{ key: '', value: '' }] // إضافة الخصائص
   });
 
   useEffect(() => {
@@ -76,6 +76,27 @@ export default function AddProductPage() {
     setFormData(prev => ({ ...prev, description: desc }));
   };
 
+  // دوال معالجة الخصائص
+  const handlePropertyChange = (index: number, field: 'key' | 'value', value: string) => {
+    const properties = [...formData.properties];
+    properties[index][field] = value;
+    setFormData(prev => ({ ...prev, properties }));
+  };
+
+  const addProperty = () => {
+    setFormData(prev => ({ 
+      ...prev, 
+      properties: [...prev.properties, { key: '', value: '' }] 
+    }));
+  };
+
+  const removeProperty = (index: number) => {
+    if (formData.properties.length === 1) return; // منع حذف كل الخصائص
+    const properties = [...formData.properties];
+    properties.splice(index, 1);
+    setFormData(prev => ({ ...prev, properties }));
+  };
+
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFormData(prev => ({ ...prev, images: [...prev.images, ...Array.from(e.target.files!)] }));
@@ -88,46 +109,63 @@ export default function AddProductPage() {
     setFormData(prev => ({ ...prev, images: imgs }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.category || !formData.pricePurchase) {
-      alert('الرجاء تعبئة كافة الحقول المطلوبة');
-      return;
-    }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!formData.name || !formData.category || !formData.pricePurchase) {
+    alert('الرجاء تعبئة كافة الحقول المطلوبة');
+    return;
+  }
+  
+  setLoading(true);
+  try {
+    const data = new FormData();
+    data.append('name', formData.name);
+    data.append('category', formData.category);
+    data.append('brand', formData.brand);
+    data.append('pricePurchase', formData.pricePurchase);
+    data.append('priceRental', formData.priceRental);
+    data.append('stockQuantity', formData.stockQuantity);
+    data.append('discountPercentage', formData.discountPercentage);
+    data.append('isBestSeller', formData.isBestSeller.toString());
+    if (formData.store) data.append('store', formData.store);
+
+    formData.description.forEach((desc) => {
+        if (desc.trim()) data.append('description', desc);
+    });
+
+    // إصلاح: إرسال الخصائص كصفيف من الكائنات
+    // تصفية الخصائص الفارغة وإرسالها بشكل صحيح
+    const validProperties = formData.properties.filter(prop => 
+      prop.key.trim() && prop.value.trim()
+    );
     
-    setLoading(true);
-    try {
-      const data = new FormData();
-      data.append('name', formData.name);
-      data.append('category', formData.category);
-      data.append('brand', formData.brand);
-      data.append('pricePurchase', formData.pricePurchase);
-      data.append('priceRental', formData.priceRental);
-      data.append('stockQuantity', formData.stockQuantity);
-      data.append('discountPercentage', formData.discountPercentage);
-      data.append('isBestSeller', formData.isBestSeller.toString());
-      if (formData.store) data.append('store', formData.store);
-
-      formData.description.forEach((desc) => {
-          if (desc.trim()) data.append('description', desc);
+    if (validProperties.length > 0) {
+      // أسلوب 1: إرسال كل خاصية كحقل منفصل
+      validProperties.forEach((prop, index) => {
+        data.append(`properties[${index}][key]`, prop.key);
+        data.append(`properties[${index}][value]`, prop.value);
       });
-
-      formData.images.forEach((file) => {
-        data.append('images', file);
-      });
-
-      await api.post('/admin/products', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      router.push('/admin/products');
-    } catch (error) {
-      console.error(error);
-      alert('فشل في إضافة المنتج، تأكد من صحة البيانات');
-    } finally {
-      setLoading(false);
+      
+      // أو أسلوب 2: إرسال كـ JSON stringified (إذا كان الباكند يتوقع ذلك)
+      // data.append('properties', JSON.stringify(validProperties));
     }
-  };
+
+    formData.images.forEach((file) => {
+      data.append('images', file);
+    });
+
+    await api.post('/admin/products', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    router.push('/admin/products');
+  } catch (error) {
+    console.error(error);
+    alert('فشل في إضافة المنتج، تأكد من صحة البيانات');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-20">
@@ -185,6 +223,43 @@ export default function AddProductPage() {
               ))}
               <button type="button" onClick={addDescriptionLine} className="text-emerald-600 font-black flex items-center gap-2 hover:bg-emerald-50 px-6 py-3 rounded-2xl transition-all w-fit">
                 <Plus size={20} /> إضافة سطر جديد
+              </button>
+            </div>
+          </div>
+
+          {/* قسم الخصائص المضافة */}
+          <div className="bg-white rounded-[3rem] p-10 shadow-sm border border-gray-100 space-y-8">
+            <h2 className="text-2xl font-black text-gray-800 border-b pb-4">الخصائص المخصصة</h2>
+            <div className="space-y-4">
+              {formData.properties.map((property, index) => (
+                <div key={index} className="flex gap-4">
+                  <input
+                    value={property.key}
+                    onChange={(e) => handlePropertyChange(index, 'key', e.target.value)}
+                    className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4"
+                    placeholder="اسم الخاصية (مثال: اللون، الحجم، الوزن...)"
+                  />
+                  <input
+                    value={property.value}
+                    onChange={(e) => handlePropertyChange(index, 'value', e.target.value)}
+                    className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4"
+                    placeholder="قيمة الخاصية (مثال: أسود، 64GB...)"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => removeProperty(index)} 
+                    className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center hover:bg-rose-100 transition-colors shrink-0"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              ))}
+              <button 
+                type="button" 
+                onClick={addProperty} 
+                className="text-emerald-600 font-black flex items-center gap-2 hover:bg-emerald-50 px-6 py-3 rounded-2xl transition-all w-fit"
+              >
+                <Plus size={20} /> إضافة خاصية جديدة
               </button>
             </div>
           </div>
